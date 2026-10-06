@@ -8,3 +8,6 @@ pydantic-settings
 pyjwt
 argon2-cffi
 alembic
+langchain-core
+langchain-google-genai
+langgraph
