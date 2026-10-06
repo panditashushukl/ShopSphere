@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-canvas: #F7F6F3;
+    --bg-surface: #FFFFFF;
+    --border-subtle: #E5E3DC;
+    --text-primary: #1C1B1A;
+    --text-muted: #63615C;
+    --accent-primary: #D97706;
+    --accent-hover: #B45309;
+    --accent-surface: rgba(217, 119, 6, 0.08);
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --bg-canvas: #141413;
+    --bg-surface: #1E1D1C;
+    --border-subtle: #2D2C2A;
+    --text-primary: #EDEDEC;
+    --text-muted: #9C9992;
+    --accent-primary: #F59E0B;
+    --accent-hover: #D97706;
+    --accent-surface: rgba(245, 158, 11, 0.12);
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border-subtle);
+  }
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Warm Mineral & Burnished Amber Utility Classes */
+.surface-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.surface-panel {
+  background-color: var(--bg-surface);
+}
+
+.glass-nav {
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.glass-panel {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.gradient-text {
+  color: var(--text-primary);
+}
+
+.gradient-btn {
+  background-color: var(--accent-primary);
+  color: #FFFFFF;
+  font-weight: 600;
+  transition: all 0.15s ease-in-out;
+}
+.gradient-btn:hover {
+  background-color: var(--accent-hover);
+}
