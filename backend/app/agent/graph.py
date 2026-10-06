@@ -1,27 +1,23 @@
 """
 LangGraph Agent Architecture Module.
 Implements stateful multi-role Commerce Agent graph using StateGraph,
-AsyncSqliteSaver checkpointer for production thread persistence, ToolNode,
+MemorySaver checkpointer for thread persistence, ToolNode,
 and message context trimming.
 """
 
 from typing import Annotated, TypedDict, Optional
 import os
-import aiosqlite
 from langchain_core.messages import BaseMessage, SystemMessage, trim_messages
 from langchain_core.runnables import RunnableConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, START
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
-from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.checkpoint.memory import MemorySaver
 
 from app.core.config import settings
 from app.agent.tools import all_tools
 from app.core.logger import app_logger
-
-CHECKPOINT_DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "agent_checkpoints.db")
 
 
 class AgentState(TypedDict):
@@ -92,7 +88,7 @@ def agent_node(state: AgentState, config: RunnableConfig) -> dict:
 
 
 async def build_commerce_agent():
-    """Constructs and compiles the StateGraph with AsyncSqliteSaver persistent checkpointer."""
+    """Constructs and compiles the StateGraph with MemorySaver checkpointer."""
     builder = StateGraph(AgentState)
 
     builder.add_node("agent", agent_node)
@@ -102,16 +98,8 @@ async def build_commerce_agent():
     builder.add_conditional_edges("agent", tools_condition)
     builder.add_edge("tools", "agent")
 
-    try:
-        conn = await aiosqlite.connect(CHECKPOINT_DB_PATH)
-        checkpointer = AsyncSqliteSaver(conn)
-        await checkpointer.setup()
-        app_logger.info(f"Initialized AsyncSqliteSaver checkpointer at {CHECKPOINT_DB_PATH}")
-        return builder.compile(checkpointer=checkpointer)
-    except Exception as e:
-        app_logger.warning(f"Failed to initialize AsyncSqliteSaver ({e}), falling back to MemorySaver")
-        checkpointer = MemorySaver()
-        return builder.compile(checkpointer=checkpointer)
+    checkpointer = MemorySaver()
+    return builder.compile(checkpointer=checkpointer)
 
 
 def create_commerce_agent():
