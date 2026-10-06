@@ -82,7 +82,7 @@ async def create_new_session(
     session = await agent_db_service.create_session(
         db,
         user_id=user_id_str,
-        title=payload.title or "New Session"
+        title=payload.title or "New Chat"
     )
     return success_response(
         data=session.model_dump(),
@@ -139,7 +139,7 @@ async def chat_or_query_agent(
         input_state = {"messages": [HumanMessage(content=req.message)]}
 
         # Execute turn on compiled agent graph
-        output_state = agent_graph.invoke(input_state, config=config)
+        output_state = await agent_graph.ainvoke(input_state, config=config)
         messages = output_state.get("messages", [])
 
         if not messages:

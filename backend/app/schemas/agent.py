@@ -29,7 +29,7 @@ class AgentQueryResponse(BaseModel):
 class AgentSessionCreate(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    title: Optional[str] = Field(default="New Session", description="Session thread title")
+    title: Optional[str] = Field(default="New Chat", description="Session thread title")
 
 
 class AgentSessionRead(BaseModel):

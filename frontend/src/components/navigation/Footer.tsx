@@ -180,7 +180,7 @@ export function Footer() {
                     href="/agent"
                     className="hover:text-amber-primary transition-colors text-left flex items-center gap-1.5"
                   >
-                    Autonomous Procurement Assistant
+                    SS Agent
                     <ExternalLink className="w-3 h-3 text-amber-primary" />
                   </Link>
                 </li>

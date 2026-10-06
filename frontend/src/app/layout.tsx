@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     "B2B Distribution",
     "Commercial Catalog",
     "Inventory Ledger",
-    "Autonomous Procurement Assistant",
+    "SS Agent",
     "Trade Pricing",
   ],
   authors: [{ name: siteConfig.company.legalName }],

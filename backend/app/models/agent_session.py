@@ -17,7 +17,7 @@ class AgentSession(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     thread_id: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     user_id: Mapped[str] = mapped_column(String(64), default="guest", index=True, nullable=False)
-    title: Mapped[str] = mapped_column(String(128), default="New Session", nullable=False)
+    title: Mapped[str] = mapped_column(String(128), default="New Chat", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

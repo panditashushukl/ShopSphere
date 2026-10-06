@@ -35,7 +35,9 @@ SYSTEM_PROMPT_TEXT = (
     "4. Buyer Operations:\n"
     "   - Search the catalog, stage items to cart, and checkout orders.\n"
     "   - Always confirm staged items or order details before executing checkout_cart.\n"
-    "5. Output Format:\n"
+    "5. Currency Directive:\n"
+    "   - Always display all product prices, monetary values, costs, and totals in Indian Rupees (₹ or Rs.). NEVER use dollar signs ($) or USD.\n"
+    "6. Output Format:\n"
     "   - Keep responses professional, clear, concise, and structured."
 )
 
@@ -66,7 +68,7 @@ def get_llm():
     return llm.bind_tools(all_tools)
 
 
-def agent_node(state: AgentState, config: RunnableConfig) -> dict:
+async def agent_node(state: AgentState, config: RunnableConfig) -> dict:
     """Agent node that applies message window trimming, system prompt injection, and model invocation."""
     raw_messages = list(state["messages"])
 
@@ -83,7 +85,7 @@ def agent_node(state: AgentState, config: RunnableConfig) -> dict:
     messages_to_send = [system_msg] + list(trimmed)
 
     llm_with_tools = get_llm()
-    response = llm_with_tools.invoke(messages_to_send, config=config)
+    response = await llm_with_tools.ainvoke(messages_to_send, config=config)
     return {"messages": [response]}
 
 

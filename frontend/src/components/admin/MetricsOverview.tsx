@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { formatCurrency } from "@/lib/utils";
-import { DollarSign, Store, Building2, UserCheck, TrendingUp } from "lucide-react";
+import { IndianRupee, Store, Building2, UserCheck, TrendingUp } from "lucide-react";
 
 interface MetricsResponse {
   [orderType: string]: {
@@ -47,7 +47,7 @@ export function MetricsOverview() {
               Total Sitewide Sales
             </span>
             <div className="p-2 bg-amber-surface text-amber-primary rounded-xl border border-subtle">
-              <DollarSign className="w-5 h-5" />
+              <IndianRupee className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-4">

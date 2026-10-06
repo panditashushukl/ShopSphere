@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { MarkdownRenderer } from "./markdown-renderer";
 
 interface SessionItem {
   thread_id: string;
@@ -127,6 +128,19 @@ export const ChatOverlay: React.FC = () => {
     const promptText = (textToSend || input).trim();
     if (!promptText || isLoading) return;
 
+    // Dynamically update active session title if generic
+    const titleSnippet = promptText.length > 30 ? promptText.slice(0, 30) + "..." : promptText;
+    setSessions((prev) =>
+      prev.map((s) => {
+        if (s.thread_id === activeThreadId) {
+          if (!s.title || s.title === "Default Session" || s.title === "New Session" || s.title === "New Chat" || s.title.startsWith("Procurement Session")) {
+            return { ...s, title: titleSnippet };
+          }
+        }
+        return s;
+      })
+    );
+
     const userMessage: ChatMessage = {
       id: `msg_${Date.now()}`,
       sender: "user",
@@ -234,8 +248,8 @@ export const ChatOverlay: React.FC = () => {
           <button
             onClick={() => setShowHistory(!showHistory)}
             className={`p-2 rounded-lg transition-colors ${showHistory
-                ? "text-amber-primary bg-amber-surface"
-                : "text-text-muted hover:text-foreground hover:bg-surface"
+              ? "text-amber-primary bg-amber-surface"
+              : "text-text-muted hover:text-foreground hover:bg-surface"
               }`}
             title="Session History"
           >
@@ -276,7 +290,7 @@ export const ChatOverlay: React.FC = () => {
               onClick={handleStartNewThread}
               className="text-xs font-medium text-amber-primary hover:underline flex items-center gap-1"
             >
-              <Plus className="w-3.5 h-3.5" /> New Session
+              <Plus className="w-3.5 h-3.5" /> New Chat
             </button>
           </div>
           {sessions.length === 0 ? (
@@ -289,8 +303,8 @@ export const ChatOverlay: React.FC = () => {
                 key={sess.thread_id}
                 onClick={() => handleSelectSession(sess.thread_id)}
                 className={`w-full text-left p-3 rounded-xl border transition-all ${sess.thread_id === activeThreadId
-                    ? "bg-surface border-amber-primary text-amber-primary"
-                    : "bg-canvas border-subtle hover:border-amber-primary text-text-muted"
+                  ? "bg-surface border-amber-primary text-amber-primary"
+                  : "bg-canvas border-subtle hover:border-amber-primary text-text-muted"
                   }`}
               >
                 <div className="font-semibold text-xs truncate">{sess.title || sess.thread_id}</div>
@@ -335,8 +349,8 @@ export const ChatOverlay: React.FC = () => {
               >
                 <div
                   className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${msg.sender === "user"
-                      ? "bg-amber-primary text-white"
-                      : "bg-surface text-amber-primary border border-subtle"
+                    ? "bg-amber-primary text-white"
+                    : "bg-surface text-amber-primary border border-subtle"
                     }`}
                 >
                   {msg.sender === "user" ? (
@@ -355,11 +369,11 @@ export const ChatOverlay: React.FC = () => {
                 </div>
                 <div
                   className={`max-w-[78%] p-3 rounded-2xl leading-relaxed ${msg.sender === "user"
-                      ? "bg-amber-primary text-white rounded-tr-none"
-                      : "bg-surface border border-subtle text-foreground rounded-tl-none"
+                    ? "bg-amber-primary text-white rounded-tr-none"
+                    : "bg-surface border border-subtle text-foreground rounded-tl-none"
                     }`}
                 >
-                  <p className="whitespace-pre-wrap">{msg.text}</p>
+                  <MarkdownRenderer content={msg.text} isUser={msg.sender === "user"} />
                   <span className={`block mt-1.5 text-[10px] font-mono text-right opacity-70 ${msg.sender === "user" ? "text-white" : "text-text-muted"}`}>
                     {msg.timestamp}
                   </span>

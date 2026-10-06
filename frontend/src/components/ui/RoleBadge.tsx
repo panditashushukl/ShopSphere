@@ -12,28 +12,28 @@ export function RoleBadge({ role = "CUSTOMER", showIcon = true, size = "md" }: R
 
   const config: Record<Role, { label: string; bg: string; text: string; border: string; icon: any }> = {
     SUPER_ADMIN: {
-      label: "Platform Admin",
+      label: "Admin",
       bg: "bg-amber-surface",
       text: "text-amber-primary",
       border: "border-subtle",
       icon: Shield,
     },
     WHOLESALER: {
-      label: "Wholesale Merchant (B2B)",
+      label: "Wholesaler",
       bg: "bg-amber-surface",
       text: "text-amber-primary",
       border: "border-subtle",
       icon: Building2,
     },
     RETAILER: {
-      label: "Retail Reseller (B2B)",
+      label: "Retailer",
       bg: "bg-amber-surface",
       text: "text-amber-primary",
       border: "border-subtle",
       icon: Store,
     },
     CUSTOMER: {
-      label: "Direct Consumer (B2C)",
+      label: "Consumer",
       bg: "bg-surface",
       text: "text-text-muted",
       border: "border-subtle",
