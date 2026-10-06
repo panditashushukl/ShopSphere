@@ -36,9 +36,16 @@ def run_migrations(connection):
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     app_logger.info("Executing async startup database migrations...")
-    async with engine.begin() as conn:
-        await conn.run_sync(run_migrations)
-    app_logger.info("Application startup completed successfully.")
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(run_migrations)
+        app_logger.info("Application startup completed successfully.")
+    except Exception as exc:
+        app_logger.error(
+            f"Failed to connect to database during startup migrations: {exc}. "
+            "Please check DATABASE_URL environment variable and ensure PostgreSQL server is reachable."
+        )
+        raise exc
     yield
     app_logger.info("Application shutting down.")
 
