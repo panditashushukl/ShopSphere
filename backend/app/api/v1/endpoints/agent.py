@@ -8,12 +8,12 @@ Strictly extracts identity from JWT credentials and injects into LangGraph runti
 from typing import List, Dict, Any, Optional
 import json
 import asyncio
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from langchain_core.messages import HumanMessage
 
-from app.api.deps import get_db, optional_user, get_current_user
+from app.api.deps import get_db, optional_user, get_user_id_str
 from app.models.user import User, Role
 from app.schemas.agent import (
     AgentQueryRequest, AgentQueryResponse, AgentSessionCreate,
@@ -60,10 +60,9 @@ async def list_agent_tools():
 @router.get("/sessions")
 async def list_user_sessions(
     db: AsyncSession = Depends(get_db),
-    user: Optional[User] = Depends(optional_user)
+    user_id_str: str = Depends(get_user_id_str)
 ):
-    """List persistent session threads for current authenticated user."""
-    user_id_str = str(user.id) if user else "guest"
+    """List persistent session threads for current authenticated user or unique guest session."""
     sessions = await agent_db_service.list_sessions(db, user_id=user_id_str)
     return success_response(
         data=[s.model_dump() for s in sessions],
@@ -75,14 +74,13 @@ async def list_user_sessions(
 async def create_new_session(
     payload: AgentSessionCreate,
     db: AsyncSession = Depends(get_db),
-    user: Optional[User] = Depends(optional_user)
+    user_id_str: str = Depends(get_user_id_str)
 ):
     """Create and persist a new chat session thread in shop.db."""
-    user_id_str = str(user.id) if user else "guest"
     session = await agent_db_service.create_session(
         db,
         user_id=user_id_str,
-        title=payload.title or "New Session"
+        title=payload.title or "New Chat"
     )
     return success_response(
         data=session.model_dump(),
@@ -104,10 +102,24 @@ async def get_session_history(
     )
 
 
+@router.delete("/sessions")
+async def clear_all_user_sessions(
+    db: AsyncSession = Depends(get_db),
+    user_id_str: str = Depends(get_user_id_str)
+):
+    """Delete all persistent session threads and chat messages for current user or guest."""
+    await agent_db_service.clear_user_sessions(db, user_id=user_id_str)
+    return success_response(
+        data=None,
+        message="All agent chat history cleared successfully"
+    )
+
+
 @router.post("/query")
 @router.post("/chat")
 async def chat_or_query_agent(
     req: AgentQueryRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: Optional[User] = Depends(optional_user)
 ):
@@ -116,7 +128,7 @@ async def chat_or_query_agent(
     Extracts identity strictly from JWT credentials and injects into runtime configuration.
     """
     thread_id = req.thread_id or "session_default"
-    user_id_str = str(user.id) if user else "GUEST_USER"
+    user_id_str = await get_user_id_str(request, user)
     user_role_str = user.role.value if user else "GUEST"
     merchant_id_str = f"M_{user_role_str}_{user_id_str}" if user else None
 
@@ -139,7 +151,7 @@ async def chat_or_query_agent(
         input_state = {"messages": [HumanMessage(content=req.message)]}
 
         # Execute turn on compiled agent graph
-        output_state = agent_graph.invoke(input_state, config=config)
+        output_state = await agent_graph.ainvoke(input_state, config=config)
         messages = output_state.get("messages", [])
 
         if not messages:
@@ -198,6 +210,7 @@ async def chat_or_query_agent(
 
 @router.get("/stream")
 async def stream_agent_query(
+    request: Request,
     message: str = Query(..., min_length=1),
     thread_id: str = Query("session_default"),
     user: Optional[User] = Depends(optional_user)
@@ -205,7 +218,7 @@ async def stream_agent_query(
     """
     Real-time Server-Sent Events (SSE) streaming endpoint for AI Agent message tokens.
     """
-    user_id_str = str(user.id) if user else "GUEST_USER"
+    user_id_str = await get_user_id_str(request, user)
     user_role_str = user.role.value if user else "GUEST"
 
     configurable = {

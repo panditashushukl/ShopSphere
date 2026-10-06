@@ -61,6 +61,8 @@ class UserResponse(BaseModel):
     avatar_url: Optional[str] = None
     is_verified: bool
     created_at: Optional[datetime] = None
+    access_token: Optional[str] = None
+    token_type: Optional[str] = "bearer"
 
 
 class UserInDB(UserResponse):

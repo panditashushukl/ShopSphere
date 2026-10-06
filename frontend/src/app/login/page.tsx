@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/store/auth-store";
+import { useCart } from "@/store/cart-store";
 import { siteConfig } from "@/config/site.config";
 import { RoleBadge } from "@/components/ui/RoleBadge";
 import { Shield, Lock, Mail, ArrowRight, Loader2, KeyRound, ShoppingBag } from "lucide-react";
@@ -37,6 +38,7 @@ function LoginContent() {
         body: JSON.stringify({ email: loginEmail, password: loginPass }),
       });
       setUser(res);
+      await useCart.getState().fetchCart();
 
       if (nextParam) {
         router.push(nextParam);

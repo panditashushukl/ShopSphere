@@ -13,19 +13,24 @@ from app.repositories.user_repository import user_repository
 from app.core.exceptions import AuthenticationError, ForbiddenRoleError
 
 
+async def _extract_token(request: Request, access_token: Optional[str]) -> Optional[str]:
+    if access_token:
+        return access_token
+    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        return auth_header.split(" ")[1]
+    return None
+
+
 async def get_current_user(
-    access_token: Optional[str] = Cookie(None),
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ) -> User:
-    """Extracts and verifies current user from access token cookie."""
-    if not access_token:
-        raise AuthenticationError("Not authenticated. Token cookie missing.")
+    """Extracts and verifies current user from entrypoint middleware state or cookie/header."""
+    user_id = getattr(request.state, "user_id", None)
+    if not user_id:
+        raise AuthenticationError("Not authenticated. Session token missing or expired.")
 
-    payload = decode_token(access_token, kind="access")
-    if not payload:
-        raise AuthenticationError("Session expired or invalid access token.")
-
-    user_id = int(payload.get("sub", 0))
     user = await user_repository.get_by_id(db, user_id)
     if not user:
         raise AuthenticationError("Authenticated user account no longer exists.")
@@ -53,16 +58,31 @@ def require_role(roles: List[str]):
 
 
 async def optional_user(
-    access_token: Optional[str] = Cookie(None),
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ) -> Optional[User]:
     """Optional user dependency that returns None for unauthenticated requests."""
-    if not access_token:
+    user_id = getattr(request.state, "user_id", None)
+    if not user_id:
         return None
 
-    payload = decode_token(access_token, kind="access")
-    if not payload:
-        return None
-
-    user_id = int(payload.get("sub", 0))
     return await user_repository.get_by_id(db, user_id)
+
+
+async def get_user_id_str(
+    request: Request,
+    user: Optional[User] = Depends(optional_user)
+) -> str:
+    """Extracts string user ID for authenticated users or unique guest session ID from cookie/header."""
+    if user:
+        return str(user.id)
+
+    guest_id = (
+        request.cookies.get("shopsphere_guest_id") or
+        request.headers.get("x-guest-id") or
+        request.query_params.get("guest_id")
+    )
+    if guest_id:
+        return guest_id
+    return "guest"
+

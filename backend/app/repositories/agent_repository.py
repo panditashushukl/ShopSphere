@@ -4,7 +4,7 @@ Agent Session & Message Data Access Layer Repository.
 
 from typing import Optional, Sequence, List
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from app.models.agent_session import AgentSession, AgentMessage
 from app.repositories.base import BaseRepository
 
@@ -36,5 +36,21 @@ class AgentRepository(BaseRepository[AgentSession]):
         result = await db.execute(stmt)
         return result.scalars().all()
 
+    async def delete_all_user_sessions(self, db: AsyncSession, user_id: str) -> None:
+        user_sess_stmt = select(AgentSession.thread_id).where(
+            (AgentSession.user_id == str(user_id)) | (AgentSession.user_id == "guest")
+        )
+        await db.execute(delete(AgentMessage).where(AgentMessage.thread_id.in_(user_sess_stmt)))
+        await db.execute(delete(AgentSession).where(
+            (AgentSession.user_id == str(user_id)) | (AgentSession.user_id == "guest")
+        ))
+        await db.commit()
+
+    async def delete_session(self, db: AsyncSession, thread_id: str) -> None:
+        await db.execute(delete(AgentMessage).where(AgentMessage.thread_id == thread_id))
+        await db.execute(delete(AgentSession).where(AgentSession.thread_id == thread_id))
+        await db.commit()
+
 
 agent_repository = AgentRepository()
+

@@ -78,9 +78,9 @@ function RegisterContent() {
           <div className="w-12 h-12 bg-amber-surface text-amber-primary rounded-2xl flex items-center justify-center mx-auto border border-subtle">
             <UserCheck className="w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-black text-foreground tracking-tight">Register B2B / B2C Account</h1>
+          <h1 className="text-2xl font-black text-foreground tracking-tight">Register</h1>
           <p className="text-xs text-text-muted">
-            Choose your business tier to access role-specific pricing and portals.
+            Choose your business tier to access role-specific features.
           </p>
         </div>
 
@@ -98,19 +98,19 @@ function RegisterContent() {
               {[
                 {
                   role: "CUSTOMER" as Role,
-                  title: "Consumer (B2C)",
+                  title: "Consumer",
                   desc: "Retail rates & direct cart checkout",
                   icon: UserCheck,
                 },
                 {
                   role: "RETAILER" as Role,
-                  title: "Retailer (B2B)",
+                  title: "Retailer",
                   desc: "Trade discount pricing & tax invoices",
                   icon: Store,
                 },
                 {
                   role: "WHOLESALER" as Role,
-                  title: "Wholesaler (B2B)",
+                  title: "Wholesaler",
                   desc: "Bulk rates, MOQs & Net-30 POs",
                   icon: Building2,
                 },
@@ -150,13 +150,13 @@ function RegisterContent() {
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Full Name / Business Title</label>
+              <label className="text-xs font-semibold text-foreground">{accountType === "CUSTOMER" ? "Full Name" : "Business/Shop Name"}</label>
               <div className="relative">
                 <User className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   required
-                  placeholder="Acme Enterprises LLC"
+                  placeholder={accountType === "CUSTOMER" ? "John Doe" : "Acme Enterprises LLC"}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full bg-canvas border border-subtle rounded-xl pl-10 pr-4 py-2.5 text-xs text-foreground placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-amber-primary"

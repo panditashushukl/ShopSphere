@@ -32,26 +32,30 @@ def run_agent_session(
     app_logger.info(f"[Thread: {thread_id}] User > {prompt}")
 
     try:
+        import asyncio
         from app.agent.graph import agent_graph
-        events = agent_graph.stream(
-            {"messages": [HumanMessage(content=prompt)]},
-            config=config,
-            stream_mode="values"
-        )
-        for event in events:
-            if "messages" in event and event["messages"]:
-                last_msg = event["messages"][-1]
-                if hasattr(last_msg, "content") and last_msg.content:
-                    if getattr(last_msg, "type", "") == "ai":
-                        content = last_msg.content
-                        if isinstance(content, dict):
-                            text = content.get("text", str(content))
-                        elif isinstance(content, list):
-                            text = "\n".join(b.get("text", str(b)) if isinstance(b, dict) else str(b) for b in content)
-                        else:
-                            text = str(content)
-                        app_logger.info(f"[Thread: {thread_id}] Agent > {text}")
 
+        async def _execute():
+            events = agent_graph.astream(
+                {"messages": [HumanMessage(content=prompt)]},
+                config=config,
+                stream_mode="values"
+            )
+            async for event in events:
+                if "messages" in event and event["messages"]:
+                    last_msg = event["messages"][-1]
+                    if hasattr(last_msg, "content") and last_msg.content:
+                        if getattr(last_msg, "type", "") == "ai":
+                            content = last_msg.content
+                            if isinstance(content, dict):
+                                text = content.get("text", str(content))
+                            elif isinstance(content, list):
+                                text = "\n".join(b.get("text", str(b)) if isinstance(b, dict) else str(b) for b in content)
+                            else:
+                                text = str(content)
+                            app_logger.info(f"[Thread: {thread_id}] Agent > {text}")
+
+        asyncio.run(_execute())
     except Exception as e:
         app_logger.error(f"[Thread: {thread_id}] Execution Error: {str(e)}", exc_info=True)
 

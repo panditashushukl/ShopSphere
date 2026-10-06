@@ -90,7 +90,7 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
         sa.Column('thread_id', sa.String(length=64), nullable=False),
         sa.Column('user_id', sa.String(length=64), nullable=False, server_default='guest'),
-        sa.Column('title', sa.String(length=128), nullable=False, server_default='New Session'),
+        sa.Column('title', sa.String(length=128), nullable=False, server_default='New Chat'),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.PrimaryKeyConstraint('id')
     )

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useAppStore, ChatMessage } from "@/lib/store/use-app-store";
+import { useCart } from "@/store/cart-store";
 import { siteConfig } from "@/config/site.config";
 import {
   Bot,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { MarkdownRenderer } from "./markdown-renderer";
 
 interface SessionItem {
   thread_id: string;
@@ -50,6 +52,13 @@ export const ChatOverlay: React.FC = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const fetchCart = useCart((s) => s.fetchCart);
+
+  useEffect(() => {
+    if (activeThreadId) {
+      fetchCart();
+    }
+  }, [activeThreadId, fetchCart]);
 
   const scrollToBottom = (smooth = true) => {
     setTimeout(() => {
@@ -123,9 +132,48 @@ export const ChatOverlay: React.FC = () => {
     }
   };
 
+  const handleClearAllHistory = async () => {
+    if (!window.confirm("Are you sure you want to delete all chat history? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      setIsLoading(true);
+      const res = await fetch(`${siteConfig.api.baseUrl}${siteConfig.api.endpoints.agent.sessions}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        setSessions([]);
+        setMessages([]);
+        setActiveThreadId(`session_${Date.now()}`);
+        setShowHistory(false);
+      } else {
+        alert("Failed to clear chat history from server.");
+      }
+    } catch (err: any) {
+      console.error("Failed to clear chat history:", err);
+      alert("Error clearing chat history: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
     const promptText = (textToSend || input).trim();
     if (!promptText || isLoading) return;
+
+    // Dynamically update active session title if generic
+    const titleSnippet = promptText.length > 30 ? promptText.slice(0, 30) + "..." : promptText;
+    setSessions((prev) =>
+      prev.map((s) => {
+        if (s.thread_id === activeThreadId) {
+          if (!s.title || s.title === "Default Session" || s.title === "New Session" || s.title === "New Chat" || s.title.startsWith("Procurement Session")) {
+            return { ...s, title: titleSnippet };
+          }
+        }
+        return s;
+      })
+    );
 
     const userMessage: ChatMessage = {
       id: `msg_${Date.now()}`,
@@ -155,6 +203,8 @@ export const ChatOverlay: React.FC = () => {
 
       const envelope = await response.json();
       const replyText = envelope?.data?.reply || "The SS Agent completed your request.";
+
+      await fetchCart();
 
       const agentMessage: ChatMessage = {
         id: `msg_${Date.now() + 1}`,
@@ -234,8 +284,8 @@ export const ChatOverlay: React.FC = () => {
           <button
             onClick={() => setShowHistory(!showHistory)}
             className={`p-2 rounded-lg transition-colors ${showHistory
-                ? "text-amber-primary bg-amber-surface"
-                : "text-text-muted hover:text-foreground hover:bg-surface"
+              ? "text-amber-primary bg-amber-surface"
+              : "text-text-muted hover:text-foreground hover:bg-surface"
               }`}
             title="Session History"
           >
@@ -272,12 +322,23 @@ export const ChatOverlay: React.FC = () => {
             <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider flex items-center gap-2">
               <HistoryIcon className="w-3.5 h-3.5 text-amber-primary" /> Past Sessions History
             </h4>
-            <button
-              onClick={handleStartNewThread}
-              className="text-xs font-medium text-amber-primary hover:underline flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" /> New Session
-            </button>
+            <div className="flex items-center gap-2">
+              {sessions.length > 0 && (
+                <button
+                  onClick={handleClearAllHistory}
+                  className="text-xs font-medium text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1"
+                  title="Clear all chat history"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Clear All
+                </button>
+              )}
+              <button
+                onClick={handleStartNewThread}
+                className="text-xs font-medium text-amber-primary hover:underline flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" /> New Chat
+              </button>
+            </div>
           </div>
           {sessions.length === 0 ? (
             <p className="text-xs text-text-muted text-center py-8">
@@ -289,8 +350,8 @@ export const ChatOverlay: React.FC = () => {
                 key={sess.thread_id}
                 onClick={() => handleSelectSession(sess.thread_id)}
                 className={`w-full text-left p-3 rounded-xl border transition-all ${sess.thread_id === activeThreadId
-                    ? "bg-surface border-amber-primary text-amber-primary"
-                    : "bg-canvas border-subtle hover:border-amber-primary text-text-muted"
+                  ? "bg-surface border-amber-primary text-amber-primary"
+                  : "bg-canvas border-subtle hover:border-amber-primary text-text-muted"
                   }`}
               >
                 <div className="font-semibold text-xs truncate">{sess.title || sess.thread_id}</div>
@@ -335,8 +396,8 @@ export const ChatOverlay: React.FC = () => {
               >
                 <div
                   className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${msg.sender === "user"
-                      ? "bg-amber-primary text-white"
-                      : "bg-surface text-amber-primary border border-subtle"
+                    ? "bg-amber-primary text-white"
+                    : "bg-surface text-amber-primary border border-subtle"
                     }`}
                 >
                   {msg.sender === "user" ? (
@@ -355,11 +416,11 @@ export const ChatOverlay: React.FC = () => {
                 </div>
                 <div
                   className={`max-w-[78%] p-3 rounded-2xl leading-relaxed ${msg.sender === "user"
-                      ? "bg-amber-primary text-white rounded-tr-none"
-                      : "bg-surface border border-subtle text-foreground rounded-tl-none"
+                    ? "bg-amber-primary text-white rounded-tr-none"
+                    : "bg-surface border border-subtle text-foreground rounded-tl-none"
                     }`}
                 >
-                  <p className="whitespace-pre-wrap">{msg.text}</p>
+                  <MarkdownRenderer content={msg.text} isUser={msg.sender === "user"} />
                   <span className={`block mt-1.5 text-[10px] font-mono text-right opacity-70 ${msg.sender === "user" ? "text-white" : "text-text-muted"}`}>
                     {msg.timestamp}
                   </span>

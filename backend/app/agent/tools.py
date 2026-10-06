@@ -14,11 +14,12 @@ from app.core.database import SessionLocal
 from app.models.user import Role, User
 from app.schemas.agent import (
     ListProductInput, UpdateStockInput, SearchCatalogInput,
-    AddToCartInput, CheckoutCartInput, GetOrderStatusInput, ToolResultOutput
+    AddToCartInput, RemoveFromCartInput, CheckoutCartInput, GetOrderStatusInput, ToolResultOutput
 )
 from app.schemas.agent import SearchProductsByPriceInput
 from app.services.product_service import product_service
 from app.services.order_service import order_service
+from app.services.cart_service import cart_service
 from app.repositories.product_repository import product_repository
 from app.repositories.order_repository import order_repository
 from app.repositories.user_repository import user_repository
@@ -52,7 +53,7 @@ async def list_product(
     if not user_id or user_role not in (Role.WHOLESALER.value, Role.SUPER_ADMIN.value):
         return ToolResultOutput(
             success=False,
-            message="Unauthorized: Only authenticated WHOLESALER or SUPER_ADMIN merchants can list products."
+            message="Please log in as a wholesaler or admin to add new products."
         ).model_dump()
 
     try:
@@ -70,13 +71,13 @@ async def list_product(
             created_prod = await product_service.create_product(db, product_in)
             return ToolResultOutput(
                 success=True,
-                message=f"Product '{title}' (SKU: {sku}) listed successfully.",
+                message=f"Product '{title}' (SKU: {sku}) has been added to the catalog.",
                 data=created_prod.model_dump()
             ).model_dump()
     except AppException as e:
         return ToolResultOutput(success=False, message=e.message).model_dump()
     except Exception as e:
-        return ToolResultOutput(success=False, message=f"Failed to list product: {str(e)}").model_dump()
+        return ToolResultOutput(success=False, message=f"Could not add product right now: {str(e)}").model_dump()
 
 
 @tool(args_schema=UpdateStockInput)
@@ -96,7 +97,7 @@ async def update_stock(
     if not user_id or user_role not in (Role.WHOLESALER.value, Role.SUPER_ADMIN.value):
         return ToolResultOutput(
             success=False,
-            message="Unauthorized: Stock updates require WHOLESALER or SUPER_ADMIN authorization."
+            message="Please log in as a wholesaler or admin to update product stock."
         ).model_dump()
 
     try:
@@ -104,13 +105,13 @@ async def update_stock(
             updated_prod = await product_service.update_stock(db, product_id, new_stock)
             return ToolResultOutput(
                 success=True,
-                message=f"Stock updated to {new_stock} for product ID {product_id}.",
+                message=f"Stock for product ID {product_id} updated to {new_stock} units.",
                 data=updated_prod.model_dump()
             ).model_dump()
     except AppException as e:
         return ToolResultOutput(success=False, message=e.message).model_dump()
     except Exception as e:
-        return ToolResultOutput(success=False, message=f"Stock update failed: {str(e)}").model_dump()
+        return ToolResultOutput(success=False, message=f"Could not update stock right now: {str(e)}").model_dump()
 
 
 @tool
@@ -135,11 +136,11 @@ async def get_merchant_inventory(
             products = await product_service.list_products(db, user=user)
             return ToolResultOutput(
                 success=True,
-                message=f"Retrieved {len(products)} inventory catalog items.",
+                message=f"Found {len(products)} products in your catalog.",
                 data=[p.model_dump() for p in products]
             ).model_dump()
     except Exception as e:
-        return ToolResultOutput(success=False, message=f"Failed to retrieve inventory: {str(e)}").model_dump()
+        return ToolResultOutput(success=False, message=f"Could not retrieve inventory items right now: {str(e)}").model_dump()
 
 
 # ============================================================================
@@ -168,87 +169,173 @@ async def search_catalog(
             products = await product_service.list_products(db, query=query, user=user)
             return ToolResultOutput(
                 success=True,
-                message=f"Found {len(products)} products matching query '{query}'.",
+                message=f"Found {len(products)} products matching '{query}'.",
                 data=[p.model_dump() for p in products]
             ).model_dump()
     except Exception as e:
-        return ToolResultOutput(success=False, message=f"Catalog search failed: {str(e)}").model_dump()
+        return ToolResultOutput(success=False, message=f"Could not search products right now: {str(e)}").model_dump()
 
 
 @tool(args_schema=AddToCartInput)
 async def add_to_cart(
     product_id: int,
-    quantity: int,
+    quantity: int = 1,
     config: Annotated[RunnableConfig, InjectedToolArg] = None
 ) -> Dict[str, Any]:
     """
-    Verify stock availability and staging item quantity for order checkout.
+    Save item and quantity into the persistent database cart.
+    If the user does not specify a quantity, ALWAYS set quantity=1 unit.
     """
+    if quantity is None or quantity <= 0:
+        quantity = 1
+
+    configurable = config.get("configurable", {}) if config else {}
+    user_id = str(configurable.get("user_id", "guest"))
+
     try:
         async with SessionLocal() as db:
-            product = await product_repository.get_by_id(db, product_id)
-            if not product:
-                return ToolResultOutput(success=False, message=f"Product ID {product_id} not found.").model_dump()
-
-            if product.stock < quantity:
-                return ToolResultOutput(
-                    success=False,
-                    message=f"Insufficient stock for '{product.title}'. Requested {quantity}, available {product.stock}."
-                ).model_dump()
-
+            cart_item = await cart_service.add_to_cart(
+                db,
+                user_id=user_id,
+                product_id=product_id,
+                quantity=quantity
+            )
+            product = cart_item.product
             return ToolResultOutput(
                 success=True,
-                message=f"Verified and staged {quantity} x '{product.title}' (ID {product_id}) for checkout.",
+                message=f"Added {quantity} x '{product.title}' to your cart.",
                 data={
                     "product_id": product.id,
                     "title": product.title,
-                    "quantity": quantity,
+                    "quantity": cart_item.quantity,
                     "unit_price": product.retail_price
                 }
             ).model_dump()
+    except AppException as e:
+        return ToolResultOutput(success=False, message=e.message).model_dump()
     except Exception as e:
-        return ToolResultOutput(success=False, message=f"Failed to add to cart: {str(e)}").model_dump()
+        return ToolResultOutput(success=False, message=f"Could not add item to cart right now: {str(e)}").model_dump()
+
+
+@tool(args_schema=RemoveFromCartInput)
+async def remove_from_cart(
+    product_id: int,
+    config: Annotated[RunnableConfig, InjectedToolArg] = None
+) -> Dict[str, Any]:
+    """
+    Remove a product from your persistent database cart.
+    """
+    configurable = config.get("configurable", {}) if config else {}
+    user_id = str(configurable.get("user_id", "guest"))
+
+    try:
+        async with SessionLocal() as db:
+            removed = await cart_service.remove_from_cart(
+                db,
+                user_id=user_id,
+                product_id=product_id
+            )
+            if removed:
+                return ToolResultOutput(
+                    success=True,
+                    message=f"Product ID {product_id} was removed from your cart."
+                ).model_dump()
+            else:
+                return ToolResultOutput(
+                    success=False,
+                    message=f"Product ID {product_id} was not found in your cart."
+                ).model_dump()
+    except Exception as e:
+        return ToolResultOutput(success=False, message=f"Could not remove item from cart: {str(e)}").model_dump()
 
 
 @tool(args_schema=CheckoutCartInput)
 async def checkout_cart(
-    items: List[AddToCartInput],
+    items: Optional[List[AddToCartInput]] = None,
     shipping_address: Optional[str] = "Standard Ground Delivery",
     payment_method: Optional[str] = "CREDIT_CARD",
     config: Annotated[RunnableConfig, InjectedToolArg] = None
 ) -> Dict[str, Any]:
     """
-    Execute order placement and stock deduction for staged items.
-    Uses authenticated user ID from injected session context.
+    Execute order placement using items saved in the user's database cart or provided items list, and clear cart upon success.
     """
     configurable = config.get("configurable", {}) if config else {}
     user_id = configurable.get("user_id")
+    thread_id = configurable.get("thread_id")
 
     if not user_id or not str(user_id).isdigit():
         return ToolResultOutput(
             success=False,
-            message="Unauthenticated: An authenticated user identity is required to execute order checkout."
+            message="Please log in to place your order."
         ).model_dump()
 
     try:
         async with SessionLocal() as db:
             user = await user_repository.get_by_id(db, int(user_id))
             if not user:
-                return ToolResultOutput(success=False, message="User identity not found in database.").model_dump()
+                return ToolResultOutput(success=False, message="Your user account details could not be found. Please log in again.").model_dump()
 
-            order_items_in = [OrderItemCreate(product_id=item.product_id, quantity=item.quantity) for item in items]
+            order_items_in = []
+            if items:
+                order_items_in = [OrderItemCreate(product_id=item.product_id, quantity=item.quantity) for item in items]
+            else:
+                db_cart_items = await cart_service.get_cart(db, user_id=str(user_id))
+                if not db_cart_items:
+                    return ToolResultOutput(
+                        success=False,
+                        message="Your cart is currently empty. Please add products to your cart before checking out."
+                    ).model_dump()
+                order_items_in = [OrderItemCreate(product_id=ci.product_id, quantity=ci.quantity) for ci in db_cart_items]
+
             order_in = OrderCreate(items=order_items_in)
-
             created_order = await order_service.create_order(db, user, order_in)
+
+            # Clear database cart after successful order creation
+            await cart_service.clear_cart(db, user_id=str(user_id))
+
             return ToolResultOutput(
                 success=True,
-                message=f"Order #{created_order.id} placed successfully for total amount ₹{created_order.total:.2f}.",
+                message=f"Order #{created_order.id} placed successfully! Total amount: ₹{created_order.total:.2f}.",
                 data=created_order.model_dump()
             ).model_dump()
     except AppException as e:
         return ToolResultOutput(success=False, message=e.message).model_dump()
     except Exception as e:
-        return ToolResultOutput(success=False, message=f"Checkout failed: {str(e)}").model_dump()
+        return ToolResultOutput(success=False, message=f"Could not complete your order right now: {str(e)}").model_dump()
+
+
+@tool
+async def get_user_cart(
+    config: Annotated[RunnableConfig, InjectedToolArg] = None
+) -> Dict[str, Any]:
+    """
+    Retrieve all items currently stored in the user's database shopping cart.
+    """
+    configurable = config.get("configurable", {}) if config else {}
+    user_id = str(configurable.get("user_id", "guest"))
+
+    try:
+        async with SessionLocal() as db:
+            cart_items = await cart_service.get_cart(db, user_id=user_id)
+            items_data = [
+                {
+                    "product_id": ci.product_id,
+                    "title": ci.product.title,
+                    "sku": ci.product.sku,
+                    "quantity": ci.quantity,
+                    "unit_price": ci.product.retail_price,
+                    "subtotal": ci.quantity * ci.product.retail_price
+                }
+                for ci in cart_items if ci.product
+            ]
+            total_amount = sum(item["subtotal"] for item in items_data)
+            return ToolResultOutput(
+                success=True,
+                message=f"Found {len(items_data)} items in your cart totaling ₹{total_amount:.2f}.",
+                data={"items": items_data, "total": total_amount}
+            ).model_dump()
+    except Exception as e:
+        return ToolResultOutput(success=False, message=f"Could not fetch cart items right now: {str(e)}").model_dump()
 
 
 @tool(args_schema=GetOrderStatusInput)
@@ -263,11 +350,11 @@ async def get_order_status(
         async with SessionLocal() as db:
             order = await order_repository.get_by_id(db, order_id)
             if not order:
-                return ToolResultOutput(success=False, message=f"Order #{order_id} not found.").model_dump()
+                return ToolResultOutput(success=False, message=f"Order #{order_id} was not found.").model_dump()
 
             return ToolResultOutput(
                 success=True,
-                message=f"Order #{order_id} status is '{order.status.value}'.",
+                message=f"Order #{order_id} is currently '{order.status.value}'.",
                 data={
                     "id": order.id,
                     "user_id": order.user_id,
@@ -277,7 +364,7 @@ async def get_order_status(
                 }
             ).model_dump()
     except Exception as e:
-        return ToolResultOutput(success=False, message=f"Failed to fetch order status: {str(e)}").model_dump()
+        return ToolResultOutput(success=False, message=f"Could not fetch order status right now: {str(e)}").model_dump()
 
 # Search Product by price 
 @tool(args_schema=SearchProductsByPriceInput)
@@ -372,6 +459,8 @@ all_tools = [
     get_merchant_inventory,
     search_catalog,
     add_to_cart,
+    remove_from_cart,
+    get_user_cart,
     checkout_cart,
     get_order_status,
     search_products_by_price

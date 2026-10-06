@@ -2,7 +2,7 @@ export const siteConfig = {
   name: "ShopSphere Enterprise",
   shortName: "ShopSphere",
   brandName: "ShopSphere",
-  description: "Enterprise Multi-Tier Commerce Platform & Autonomous Procurement Assistant",
+  description: "Enterprise Multi-Tier Commerce Platform & SS Agent",
   url: "",
   ogImage: "https://images.unsplash.com/photo-1522542550221-31fd19575a2d",
   company: {
@@ -62,13 +62,18 @@ export const siteConfig = {
         query: "/agent/query",
         stream: "/agent/stream",
       },
+      cart: {
+        get: "/cart",
+        add: "/cart",
+        clear: "/cart",
+      },
     },
   },
   nav: {
     main: [
-      { title: "Catalog", href: "/products" },
-      { title: "Wholesale Exchange", href: "/wholesaler" },
-      { title: "Procurement Desk", href: "/orders" },
+      { title: "Products", href: "/products" },
+      // { title: "Wholesale Exchange", href: "/wholesaler" },
+      { title: "My Orders", href: "/orders" },
       { title: "SS Agent", href: "/agent" },
     ],
     admin: [

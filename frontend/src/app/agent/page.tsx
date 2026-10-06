@@ -8,9 +8,10 @@ import { RoleBadge } from "@/components/ui/RoleBadge";
 import { siteConfig } from "@/config/site.config";
 import {
   Layers, Send, User, Sparkles, Trash2, RefreshCw, Plus, History,
-  ArrowRight, ShoppingCart, ShoppingBag, AlertCircle
+  ArrowRight, ShoppingCart, ShoppingBag, AlertCircle, ChevronDown
 } from "lucide-react";
 import Link from "next/link";
+import { MarkdownRenderer } from "@/components/agent/markdown-renderer";
 
 interface Message {
   id: string;
@@ -32,14 +33,33 @@ function AgentContent() {
   const cartLines = useCart((s) => s.lines);
   const addCart = useCart((s) => s.add);
   const clearCart = useCart((s) => s.clear);
+  const fetchCart = useCart((s) => s.fetchCart);
 
   const [activeSessionId, setActiveSessionId] = useState<string>("session_default");
   const [sessions, setSessions] = useState<Session[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+
+  useEffect(() => {
+    if (activeSessionId) {
+      fetchCart();
+    }
+  }, [activeSessionId, fetchCart]);
   const [loading, setLoading] = useState(false);
+  const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const historyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (historyRef.current && !historyRef.current.contains(e.target as Node)) {
+        setShowHistoryDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const scrollToBottom = (smooth = true) => {
     setTimeout(() => {
@@ -88,7 +108,7 @@ function AgentContent() {
             {
               id: `welcome-${Date.now()}`,
               sender: "agent",
-              text: `Welcome ${user?.full_name || "Guest"}! I am your Autonomous Procurement Assistant. How can I support your catalog browsing or order execution today?`,
+              text: `Welcome ${user?.full_name || "Guest"}! I am your SS Agent. How can I support your catalog browsing or order execution today?`,
               timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
               metadata: { status: "Ready", role: user?.role || "GUEST" }
             }
@@ -143,7 +163,7 @@ function AgentContent() {
         {
           id: `welcome-${Date.now()}`,
           sender: "agent",
-          text: "New session initialized. Ready for catalog queries and order execution.",
+          text: "New Chat initialized. Ready for catalog queries and order execution.",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         }
       ]);
@@ -156,6 +176,19 @@ function AgentContent() {
   const handleSend = async (promptToSend?: string) => {
     const textQuery = (promptToSend || input).trim();
     if (!textQuery || loading) return;
+
+    // Dynamically update active session title if generic
+    const titleSnippet = textQuery.length > 30 ? textQuery.slice(0, 30) + "..." : textQuery;
+    setSessions((prev) =>
+      prev.map((s) => {
+        if (s.thread_id === activeSessionId) {
+          if (!s.title || s.title === "Default Session" || s.title === "New Session" || s.title === "New Chat" || s.title.startsWith("Procurement Session")) {
+            return { ...s, title: titleSnippet };
+          }
+        }
+        return s;
+      })
+    );
 
     const userMsg: Message = {
       id: `user-${Date.now()}`,
@@ -198,6 +231,8 @@ function AgentContent() {
       if (res.metadata?.action === "CLEAR_CART") {
         clearCart();
       }
+
+      await fetchCart();
 
       const agentMsg: Message = {
         id: `agent-${Date.now()}`,
@@ -243,6 +278,35 @@ function AgentContent() {
     scrollToBottom(true);
   };
 
+  const handleClearAllHistory = async () => {
+    if (!window.confirm("Are you sure you want to delete all chat history? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      setLoading(true);
+      await api(siteConfig.api.endpoints.agent.sessions, {
+        method: "DELETE",
+      });
+      setSessions([]);
+      setActiveSessionId("session_default");
+      setMessages([
+        {
+          id: `welcome-${Date.now()}`,
+          sender: "agent",
+          text: `History cleared successfully. Welcome ${user?.full_name || "Guest"}! How can I help you today?`,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          metadata: { status: "Ready" }
+        }
+      ]);
+      setShowHistoryDropdown(false);
+    } catch (err: any) {
+      console.error("Failed to clear chat history:", err);
+      alert("Could not clear chat history right now: " + (err.message || "Server error"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="bg-surface border border-subtle rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -252,9 +316,9 @@ function AgentContent() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black text-foreground tracking-tight">Autonomous Procurement Assistant</h1>
+              <h1 className="text-xl font-black text-foreground tracking-tight">SS Agent</h1>
               <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-surface text-amber-primary border border-subtle px-2.5 py-0.5 rounded-full">
-                <Sparkles className="w-3 h-3 text-amber-primary" /> Enterprise Workflow Engine
+                <Sparkles className="w-3 h-3 text-amber-primary" /> Online
               </span>
             </div>
             <p className="text-xs text-text-muted mt-0.5">
@@ -265,19 +329,58 @@ function AgentContent() {
 
         <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
           {sessions.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-canvas border border-subtle px-3 py-1.5 rounded-xl text-xs text-text-muted">
-              <History className="w-3.5 h-3.5 text-amber-primary" />
-              <select
-                value={activeSessionId}
-                onChange={(e) => setActiveSessionId(e.target.value)}
-                className="bg-transparent text-foreground focus:outline-none font-medium cursor-pointer"
+            <div className="relative" ref={historyRef}>
+              <button
+                onClick={() => setShowHistoryDropdown(!showHistoryDropdown)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                  showHistoryDropdown
+                    ? "bg-amber-surface border-amber-primary text-amber-primary"
+                    : "bg-canvas border-subtle text-foreground hover:border-amber-primary"
+                }`}
+                title="View Chat History"
               >
-                {sessions.map((sess) => (
-                  <option key={sess.thread_id} value={sess.thread_id} className="bg-surface text-foreground">
-                    {sess.title} ({sess.thread_id.slice(-4)})
-                  </option>
-                ))}
-              </select>
+                <History className="w-3.5 h-3.5 text-amber-primary" />
+                <span>History</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showHistoryDropdown ? "rotate-180 text-amber-primary" : "text-text-muted"}`} />
+              </button>
+
+              {showHistoryDropdown && (
+                <div className="absolute right-0 mt-2 w-64 max-h-72 overflow-y-auto bg-surface border border-subtle rounded-2xl shadow-xl z-50 p-2 space-y-1">
+                  <div className="text-[11px] font-bold text-text-muted px-2 py-1 uppercase tracking-wider border-b border-subtle mb-1 flex items-center justify-between">
+                    <span>Chat History</span>
+                    <span className="text-[10px] font-normal font-mono">{sessions.length} chats</span>
+                  </div>
+                  {sessions.map((sess) => (
+                    <button
+                      key={sess.thread_id}
+                      onClick={() => {
+                        setActiveSessionId(sess.thread_id);
+                        setShowHistoryDropdown(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-xl text-xs flex flex-col gap-0.5 transition-all ${
+                        sess.thread_id === activeSessionId
+                          ? "bg-amber-surface text-amber-primary font-bold border border-subtle"
+                          : "text-foreground hover:bg-canvas hover:text-amber-primary"
+                      }`}
+                    >
+                      <span className="truncate">{sess.title || "Untitled Session"}</span>
+                      <span className="text-[10px] text-text-muted font-mono">
+                        {sess.created_at ? new Date(sess.created_at).toLocaleDateString() : ""}
+                      </span>
+                    </button>
+                  ))}
+                  <div className="pt-1 mt-1 border-t border-subtle">
+                    <button
+                      onClick={handleClearAllHistory}
+                      disabled={loading}
+                      className="w-full text-left px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 flex items-center gap-1.5 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Clear All History</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -285,10 +388,10 @@ function AgentContent() {
             onClick={handleCreateNewSession}
             disabled={loading}
             className="px-3 py-2 bg-amber-primary hover:bg-amber-hover text-white active:scale-95 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all border border-subtle"
-            title="Create New Session Thread"
+            title="Create New Chat Thread"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            <span className="hidden sm:inline">New Session</span>
+            <span className="hidden sm:inline">New Chat</span>
           </button>
 
           {user ? (
@@ -327,8 +430,8 @@ function AgentContent() {
             >
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${msg.sender === "user"
-                    ? "bg-amber-primary text-white"
-                    : "bg-amber-surface text-amber-primary border border-subtle"
+                  ? "bg-amber-primary text-white"
+                  : "bg-amber-surface text-amber-primary border border-subtle"
                   }`}
               >
                 {msg.sender === "user" ? (
@@ -340,12 +443,12 @@ function AgentContent() {
 
               <div className={`space-y-1.5 max-w-[85%] ${msg.sender === "user" ? "items-end" : "items-start"}`}>
                 <div
-                  className={`p-4 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-line ${msg.sender === "user"
-                      ? "bg-amber-primary text-white shadow-sm rounded-tr-none"
-                      : "bg-canvas border border-subtle text-foreground rounded-tl-none"
+                  className={`p-4 rounded-2xl text-xs sm:text-sm leading-relaxed ${msg.sender === "user"
+                    ? "bg-amber-primary text-white shadow-sm rounded-tr-none"
+                    : "bg-canvas border border-subtle text-foreground rounded-tl-none"
                     }`}
                 >
-                  {msg.text}
+                  <MarkdownRenderer content={msg.text} isUser={msg.sender === "user"} />
                 </div>
 
                 <div className={`flex flex-wrap items-center gap-2 text-[10px] text-text-muted ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
@@ -400,8 +503,8 @@ function AgentContent() {
               onClick={() => handleSend()}
               disabled={loading || !input.trim()}
               className={`p-2.5 rounded-xl text-white transition-all ${loading || !input.trim()
-                  ? "bg-subtle text-text-muted cursor-not-allowed"
-                  : "bg-amber-primary hover:bg-amber-hover shadow-sm active:scale-95"
+                ? "bg-subtle text-text-muted cursor-not-allowed"
+                : "bg-amber-primary hover:bg-amber-hover shadow-sm active:scale-95"
                 }`}
             >
               <Send className="w-4 h-4" />

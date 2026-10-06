@@ -21,7 +21,7 @@ class AgentDBService:
         db: AsyncSession,
         thread_id: str,
         user_id: str = "guest",
-        title: str = "New Session"
+        title: str = "New Chat"
     ) -> AgentSession:
         """Retrieves an existing session by thread_id or creates one asynchronously."""
         session = await agent_repository.get_by_thread_id(db, thread_id)
@@ -38,9 +38,9 @@ class AgentDBService:
         self,
         db: AsyncSession,
         user_id: str = "guest",
-        title: str = "New Session"
+        title: str = "New Chat"
     ) -> AgentSessionRead:
-        """Creates a new session record in SQLite shop.db."""
+        """Creates a New Chat record in SQLite shop.db."""
         thread_id = f"session_{uuid.uuid4().hex[:8]}"
         session = AgentSession(
             thread_id=thread_id,
@@ -67,7 +67,14 @@ class AgentDBService:
         metadata: Optional[Dict[str, Any]] = None
     ) -> AgentMessage:
         """Saves a user or agent message into shop.db via SQLAlchemy."""
-        await self.get_or_create_session(db, thread_id=thread_id)
+        session = await self.get_or_create_session(db, thread_id=thread_id)
+
+        # Dynamic title update: If sender is user, update generic session title to prompt text snippet
+        if sender == "user" and text and text.strip():
+            clean_prompt = text.strip()
+            if session.title in ("New Session", "Default Session", "New Chat") or session.title.startswith("Procurement Session"):
+                session.title = clean_prompt[:32] + ("..." if len(clean_prompt) > 32 else "")
+                db.add(session)
 
         timestamp_str = datetime.now(timezone.utc).strftime("%I:%M %p")
         metadata_json = json.dumps(metadata or {})
@@ -104,6 +111,10 @@ class AgentDBService:
                 "metadata": meta
             })
         return output
+
+    async def clear_user_sessions(self, db: AsyncSession, user_id: str = "guest") -> None:
+        """Deletes all persistent sessions and chat history for a given user."""
+        await agent_repository.delete_all_user_sessions(db, user_id)
 
 
 agent_db_service = AgentDBService()
