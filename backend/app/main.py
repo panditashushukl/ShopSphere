@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.database import engine
-from app.core.middleware import RequestIDMiddleware
+from app.core.middleware import RequestIDMiddleware, AuthenticationMiddleware
 from app.core.exceptions import register_exception_handlers
 from app.core.logger import app_logger
 
@@ -23,6 +23,7 @@ import app.models.user
 import app.models.product
 import app.models.order
 import app.models.agent_session
+import app.models.cart
 
 
 def run_migrations(connection):
@@ -51,6 +52,7 @@ app = FastAPI(
 
 # Cross-Cutting Middlewares
 app.add_middleware(RequestIDMiddleware)
+app.add_middleware(AuthenticationMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

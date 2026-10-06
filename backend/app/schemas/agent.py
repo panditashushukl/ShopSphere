@@ -84,11 +84,15 @@ class SearchCatalogInput(BaseModel):
 
 class AddToCartInput(BaseModel):
     product_id: int = Field(..., gt=0, description="Database numeric ID of product to purchase")
-    quantity: int = Field(..., gt=0, description="Quantity to add")
+    quantity: int = Field(default=1, gt=0, description="Quantity to add. Default to 1 unit if user does not mention a quantity.")
+
+
+class RemoveFromCartInput(BaseModel):
+    product_id: int = Field(..., gt=0, description="Database numeric ID of product to remove from cart")
 
 
 class CheckoutCartInput(BaseModel):
-    items: List[AddToCartInput] = Field(..., min_length=1, description="Cart line items to checkout")
+    items: Optional[List[AddToCartInput]] = Field(default=None, description="Optional cart items to checkout. If empty, items will be loaded directly from your database cart.")
     shipping_address: Optional[str] = Field(default="Standard Ground Delivery", description="Shipping address")
     payment_method: Optional[str] = Field(default="CREDIT_CARD", description="Payment method")
 

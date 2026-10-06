@@ -112,5 +112,9 @@ class AgentDBService:
             })
         return output
 
+    async def clear_user_sessions(self, db: AsyncSession, user_id: str = "guest") -> None:
+        """Deletes all persistent sessions and chat history for a given user."""
+        await agent_repository.delete_all_user_sessions(db, user_id)
+
 
 agent_db_service = AgentDBService()

@@ -33,11 +33,18 @@ function AgentContent() {
   const cartLines = useCart((s) => s.lines);
   const addCart = useCart((s) => s.add);
   const clearCart = useCart((s) => s.clear);
+  const fetchCart = useCart((s) => s.fetchCart);
 
   const [activeSessionId, setActiveSessionId] = useState<string>("session_default");
   const [sessions, setSessions] = useState<Session[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+
+  useEffect(() => {
+    if (activeSessionId) {
+      fetchCart();
+    }
+  }, [activeSessionId, fetchCart]);
   const [loading, setLoading] = useState(false);
   const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
 
@@ -225,6 +232,8 @@ function AgentContent() {
         clearCart();
       }
 
+      await fetchCart();
+
       const agentMsg: Message = {
         id: `agent-${Date.now()}`,
         sender: "agent",
@@ -267,6 +276,35 @@ function AgentContent() {
       }
     ]);
     scrollToBottom(true);
+  };
+
+  const handleClearAllHistory = async () => {
+    if (!window.confirm("Are you sure you want to delete all chat history? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      setLoading(true);
+      await api(siteConfig.api.endpoints.agent.sessions, {
+        method: "DELETE",
+      });
+      setSessions([]);
+      setActiveSessionId("session_default");
+      setMessages([
+        {
+          id: `welcome-${Date.now()}`,
+          sender: "agent",
+          text: `History cleared successfully. Welcome ${user?.full_name || "Guest"}! How can I help you today?`,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          metadata: { status: "Ready" }
+        }
+      ]);
+      setShowHistoryDropdown(false);
+    } catch (err: any) {
+      console.error("Failed to clear chat history:", err);
+      alert("Could not clear chat history right now: " + (err.message || "Server error"));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -331,6 +369,16 @@ function AgentContent() {
                       </span>
                     </button>
                   ))}
+                  <div className="pt-1 mt-1 border-t border-subtle">
+                    <button
+                      onClick={handleClearAllHistory}
+                      disabled={loading}
+                      className="w-full text-left px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 flex items-center gap-1.5 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Clear All History</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

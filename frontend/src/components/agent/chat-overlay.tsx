@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useAppStore, ChatMessage } from "@/lib/store/use-app-store";
+import { useCart } from "@/store/cart-store";
 import { siteConfig } from "@/config/site.config";
 import {
   Bot,
@@ -51,6 +52,13 @@ export const ChatOverlay: React.FC = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const fetchCart = useCart((s) => s.fetchCart);
+
+  useEffect(() => {
+    if (activeThreadId) {
+      fetchCart();
+    }
+  }, [activeThreadId, fetchCart]);
 
   const scrollToBottom = (smooth = true) => {
     setTimeout(() => {
@@ -124,6 +132,32 @@ export const ChatOverlay: React.FC = () => {
     }
   };
 
+  const handleClearAllHistory = async () => {
+    if (!window.confirm("Are you sure you want to delete all chat history? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      setIsLoading(true);
+      const res = await fetch(`${siteConfig.api.baseUrl}${siteConfig.api.endpoints.agent.sessions}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        setSessions([]);
+        setMessages([]);
+        setActiveThreadId(`session_${Date.now()}`);
+        setShowHistory(false);
+      } else {
+        alert("Failed to clear chat history from server.");
+      }
+    } catch (err: any) {
+      console.error("Failed to clear chat history:", err);
+      alert("Error clearing chat history: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
     const promptText = (textToSend || input).trim();
     if (!promptText || isLoading) return;
@@ -169,6 +203,8 @@ export const ChatOverlay: React.FC = () => {
 
       const envelope = await response.json();
       const replyText = envelope?.data?.reply || "The SS Agent completed your request.";
+
+      await fetchCart();
 
       const agentMessage: ChatMessage = {
         id: `msg_${Date.now() + 1}`,
@@ -286,12 +322,23 @@ export const ChatOverlay: React.FC = () => {
             <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider flex items-center gap-2">
               <HistoryIcon className="w-3.5 h-3.5 text-amber-primary" /> Past Sessions History
             </h4>
-            <button
-              onClick={handleStartNewThread}
-              className="text-xs font-medium text-amber-primary hover:underline flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" /> New Chat
-            </button>
+            <div className="flex items-center gap-2">
+              {sessions.length > 0 && (
+                <button
+                  onClick={handleClearAllHistory}
+                  className="text-xs font-medium text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1"
+                  title="Clear all chat history"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Clear All
+                </button>
+              )}
+              <button
+                onClick={handleStartNewThread}
+                className="text-xs font-medium text-amber-primary hover:underline flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" /> New Chat
+              </button>
+            </div>
           </div>
           {sessions.length === 0 ? (
             <p className="text-xs text-text-muted text-center py-8">

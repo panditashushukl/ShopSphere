@@ -3,12 +3,13 @@ Auth API Presentation Endpoint Router.
 Handles HTTP request parameter extraction, delegation to AuthService, and envelope responses.
 """
 
-from fastapi import APIRouter, Cookie, Depends, Response, status
+from fastapi import APIRouter, Cookie, Depends, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_current_user
 from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin, UserResponse
 from app.services.auth_service import auth_service
+from app.services.cart_service import cart_service
 from app.core.response import success_response
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -17,54 +18,64 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
     data: UserCreate,
-    response: Response,
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ):
     """Register a new customer or merchant account."""
-    user = await auth_service.register_user(db, data, response)
-    return success_response(
+    user = await auth_service.register_user(db, data)
+    guest_id = request.cookies.get("shopsphere_guest_id") or request.headers.get("x-guest-id") or "guest"
+    await cart_service.merge_guest_cart(db, guest_id=guest_id, user_id=str(user.id))
+    res = success_response(
         data=user.model_dump(),
         message="User registered successfully",
         status_code=status.HTTP_201_CREATED
     )
+    auth_service.set_auth_cookies(res, user)
+    return res
 
 
 @router.post("/login")
 async def login(
     data: UserLogin,
-    response: Response,
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ):
     """Authenticate user credentials and set session cookies."""
-    user = await auth_service.login_user(db, data, response)
-    return success_response(
+    user = await auth_service.login_user(db, data)
+    guest_id = request.cookies.get("shopsphere_guest_id") or request.headers.get("x-guest-id") or "guest"
+    await cart_service.merge_guest_cart(db, guest_id=guest_id, user_id=str(user.id))
+    res = success_response(
         data=user.model_dump(),
         message="Login successful"
     )
+    auth_service.set_auth_cookies(res, user)
+    return res
 
 
 @router.post("/refresh")
 async def refresh(
-    response: Response,
     refresh_token: str | None = Cookie(None),
     db: AsyncSession = Depends(get_db)
 ):
     """Refresh access token cookies using refresh token."""
-    user = await auth_service.refresh_tokens(db, refresh_token, response)
-    return success_response(
+    user = await auth_service.refresh_tokens(db, refresh_token)
+    res = success_response(
         data=user.model_dump(),
         message="Tokens refreshed successfully"
     )
+    auth_service.set_auth_cookies(res, user)
+    return res
 
 
 @router.post("/logout")
-async def logout(response: Response):
+async def logout():
     """Clear user session authentication cookies."""
-    auth_service.clear_auth_cookies(response)
-    return success_response(
+    res = success_response(
         data={"ok": True},
         message="Logged out successfully"
     )
+    auth_service.clear_auth_cookies(res)
+    return res
 
 
 @router.get("/me")

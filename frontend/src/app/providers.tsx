@@ -3,7 +3,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/store/auth-store";
+import { useCart } from "@/store/cart-store";
 import { api } from "@/lib/api-client";
+import { getGuestId } from "@/lib/guest-id";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -21,10 +23,19 @@ export function Providers({ children }: { children: ReactNode }) {
   const setUser = useAuth((s) => s.setUser);
 
   useEffect(() => {
-    // Synchronize auth state with backend on mount
+    // Initialize guest session ID cookie on mount
+    getGuestId();
+
+    // Synchronize auth state and cart with backend on mount
     api<{ id: number; email: string; full_name: string; role: any; is_verified: boolean }>("/auth/me")
-      .then((user) => setUser(user))
-      .catch(() => setUser(null));
+      .then((user) => {
+        setUser(user);
+        useCart.getState().fetchCart();
+      })
+      .catch(() => {
+        setUser(null);
+        useCart.getState().fetchCart();
+      });
   }, [setUser]);
 
   return (

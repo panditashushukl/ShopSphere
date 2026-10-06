@@ -43,7 +43,8 @@ class APIErrorEnvelope(BaseModel):
 def success_response(
     data: Any = None,
     message: str = "Operation completed successfully",
-    status_code: int = 200
+    status_code: int = 200,
+    response: Optional[Response] = None
 ) -> JSONResponse:
     """Utility to build standard JSON response envelope."""
     payload = APIResponse(
@@ -53,4 +54,8 @@ def success_response(
         message=message,
         timestamp=datetime.now(timezone.utc).isoformat()
     ).model_dump(mode="json")
-    return JSONResponse(status_code=status_code, content=payload)
+    json_res = JSONResponse(status_code=status_code, content=payload)
+    if response is not None and hasattr(response, "headers"):
+        for key, value in response.headers.raw:
+            json_res.headers.append(key.decode("latin1"), value.decode("latin1"))
+    return json_res

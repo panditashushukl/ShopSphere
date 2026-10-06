@@ -62,6 +62,11 @@ export const siteConfig = {
         query: "/agent/query",
         stream: "/agent/stream",
       },
+      cart: {
+        get: "/cart",
+        add: "/cart",
+        clear: "/cart",
+      },
     },
   },
   nav: {
