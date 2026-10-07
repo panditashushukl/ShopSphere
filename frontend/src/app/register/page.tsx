@@ -98,7 +98,7 @@ function RegisterContent() {
               {[
                 {
                   role: "CUSTOMER" as Role,
-                  title: "Consumer",
+                  title: "Customer",
                   desc: "Retail rates & direct cart checkout",
                   icon: UserCheck,
                 },
@@ -122,11 +122,10 @@ function RegisterContent() {
                     key={item.role}
                     type="button"
                     onClick={() => setAccountType(item.role)}
-                    className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all ${
-                      isSelected
+                    className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all ${isSelected
                         ? "bg-amber-surface border-amber-primary"
                         : "bg-canvas border-subtle text-text-muted hover:border-amber-primary/40"
-                    }`}
+                      }`}
                   >
                     <Icon className={`w-5 h-5 ${isSelected ? "text-amber-primary" : "text-text-muted"}`} />
                     <div className="mt-2">

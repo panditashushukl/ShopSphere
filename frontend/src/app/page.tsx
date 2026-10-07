@@ -79,7 +79,7 @@ function HomeContent() {
           </h1>
 
           <p className="text-sm sm:text-base text-text-muted leading-relaxed max-w-2xl">
-            {siteConfig.brandName} is your trusted commercial supply partner. Access authentic electronics, commercial hardware, and consumer goods with verified quality guarantees, volume trade discounts, and express dispatch.
+            {siteConfig.brandName} is your trusted commercial supply partner. Access authentic electronics, commercial hardware, and Customer goods with verified quality guarantees, volume trade discounts, and express dispatch.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center gap-4">
@@ -167,7 +167,7 @@ function HomeContent() {
             Commercial Trust & Excellence
           </span>
           <h3 className="text-2xl font-black text-foreground tracking-tight">
-            Trusted by Resellers, Wholesalers & Retail Consumers
+            Trusted by Resellers, Wholesalers & Retail Customers
           </h3>
         </div>
 

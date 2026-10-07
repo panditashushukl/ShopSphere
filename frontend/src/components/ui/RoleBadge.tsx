@@ -33,7 +33,7 @@ export function RoleBadge({ role = "CUSTOMER", showIcon = true, size = "md" }: R
       icon: Store,
     },
     CUSTOMER: {
-      label: "Consumer",
+      label: "Customer",
       bg: "bg-surface",
       text: "text-text-muted",
       border: "border-subtle",

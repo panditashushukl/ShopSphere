@@ -65,23 +65,25 @@ export function Navbar() {
               </Link>
 
               <nav className="hidden md:flex items-center space-x-1 pl-4 border-l border-subtle">
-                {siteConfig.nav.main.map((link) => {
-                  const isActive =
-                    pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-150 ${
-                        isActive
-                          ? "bg-amber-surface text-amber-primary font-bold border border-subtle"
-                          : "text-text-muted hover:text-foreground hover:bg-canvas"
-                      }`}
-                    >
-                      {link.title}
-                    </Link>
-                  );
-                })}
+                {siteConfig.nav.main
+                  .filter((link) => (link.href === "/orders" ? Boolean(user) : true))
+                  .map((link) => {
+                    const isActive =
+                      pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-150 ${
+                          isActive
+                            ? "bg-amber-surface text-amber-primary font-bold border border-subtle"
+                            : "text-text-muted hover:text-foreground hover:bg-canvas"
+                        }`}
+                      >
+                        {link.title}
+                      </Link>
+                    );
+                  })}
 
                 {/* Admin Panel Link for Super Admins */}
                 {isSuperAdmin && (

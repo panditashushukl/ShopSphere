@@ -14,7 +14,7 @@ function ProductsCatalogContent() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Header Banner */}
-      <div className="bg-surface border border-subtle rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      {/* <div className="bg-surface border border-subtle rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-surface border border-subtle text-amber-primary text-xs font-bold">
             <Sparkles className="w-3.5 h-3.5" /> Direct & Commercial Product Catalog
@@ -58,7 +58,7 @@ function ProductsCatalogContent() {
             </div>
           </div>
         )}
-      </div>
+      </div> */}
 
       {/* Catalog Grid */}
       <ProductGrid />

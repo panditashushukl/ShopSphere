@@ -91,7 +91,15 @@ export function ProductCard({ product }: { product: ProductItem }) {
         {/* Thumbnail Image Visual */}
         <Link href={`/products/${product.id}`} className="block">
           <div className="w-full h-44 rounded-xl bg-canvas flex items-center justify-center p-6 border border-subtle group-hover:border-subtle transition-colors relative overflow-hidden">
-            <Package className="w-16 h-16 text-text-muted group-hover:scale-105 group-hover:text-amber-primary transition-all duration-200" />
+            {product.primary_image ? (
+              <img
+                src={product.primary_image}
+                alt={product.title}
+                className="w-full h-full object-cover rounded-xl"
+              />
+            ) : (
+              <Package className="w-28 h-28 text-text-muted" />
+            )}
             <div className="absolute inset-0 bg-surface/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3 backdrop-blur-xs">
               <span className="text-xs text-amber-primary font-medium">View specifications &rarr;</span>
             </div>
@@ -107,9 +115,8 @@ export function ProductCard({ product }: { product: ProductItem }) {
           </Link>
           <div className="flex items-center gap-2 mt-1">
             <span
-              className={`w-2 h-2 rounded-full ${
-                product.stock > 10 ? "bg-emerald-500" : product.stock > 0 ? "bg-amber-500" : "bg-rose-500"
-              }`}
+              className={`w-2 h-2 rounded-full ${product.stock > 10 ? "bg-emerald-500" : product.stock > 0 ? "bg-amber-500" : "bg-rose-500"
+                }`}
             />
             <span className="text-xs text-text-muted">
               {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
@@ -136,13 +143,12 @@ export function ProductCard({ product }: { product: ProductItem }) {
             <button
               onClick={handleAddToCart}
               disabled={product.stock <= 0}
-              className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-200 ${
-                added
+              className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-200 ${added
                   ? "bg-emerald-600 text-white"
                   : product.stock <= 0
-                  ? "bg-canvas text-text-muted cursor-not-allowed border border-subtle"
-                  : "bg-canvas hover:bg-surface text-foreground border border-subtle"
-              }`}
+                    ? "bg-canvas text-text-muted cursor-not-allowed border border-subtle"
+                    : "bg-canvas hover:bg-surface text-foreground border border-subtle"
+                }`}
               title="Add to Cart"
             >
               {added ? (
@@ -159,11 +165,10 @@ export function ProductCard({ product }: { product: ProductItem }) {
             <button
               onClick={handleBuyNow}
               disabled={product.stock <= 0}
-              className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-200 ${
-                product.stock <= 0
+              className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-200 ${product.stock <= 0
                   ? "bg-canvas text-text-muted cursor-not-allowed border border-subtle"
                   : "bg-amber-primary hover:bg-amber-hover text-white shadow-sm active:scale-95"
-              }`}
+                }`}
               title="Buy Now & Checkout"
             >
               <Zap className="w-3.5 h-3.5 fill-current" /> Buy Now
@@ -173,11 +178,10 @@ export function ProductCard({ product }: { product: ProductItem }) {
           <button
             onClick={handleBuyNow}
             disabled={product.stock <= 0}
-            className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all duration-200 ${
-              product.stock <= 0
+            className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all duration-200 ${product.stock <= 0
                 ? "bg-canvas text-text-muted cursor-not-allowed border border-subtle"
                 : "bg-amber-primary hover:bg-amber-hover text-white shadow-sm active:scale-95"
-            }`}
+              }`}
             title="Sign In to Purchase"
           >
             <Zap className="w-4 h-4 fill-current" /> Buy Now

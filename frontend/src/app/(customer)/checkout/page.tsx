@@ -138,7 +138,7 @@ export default function CheckoutPage() {
             {/* Account Tier Info */}
             <div className="p-4 bg-surface border border-subtle rounded-2xl flex items-center justify-between shadow-sm">
               <div>
-                <span className="text-[10px] text-text-muted uppercase font-semibold">Logged In Buyer Account</span>
+                <span className="text-[10px] text-text-muted uppercase font-semibold">LUser Name</span>
                 <div className="text-sm font-bold text-foreground mt-0.5">{user?.full_name || user?.email}</div>
               </div>
               <RoleBadge role={user?.role} size="sm" />
@@ -146,7 +146,7 @@ export default function CheckoutPage() {
 
             {/* Shipping Address */}
             <div className="bg-surface border border-subtle rounded-2xl p-6 space-y-3 shadow-sm">
-              <h3 className="text-sm font-bold text-foreground">Delivery & Shipping Destination</h3>
+              <h3 className="text-sm font-bold text-foreground">Delivery Address</h3>
               <textarea
                 rows={2}
                 required
@@ -158,7 +158,7 @@ export default function CheckoutPage() {
 
             {/* Payment Method */}
             <div className="bg-surface border border-subtle rounded-2xl p-6 space-y-4 shadow-sm">
-              <h3 className="text-sm font-bold text-foreground">Select Payment Channel</h3>
+              <h3 className="text-sm font-bold text-foreground">Select Payment Method</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
                   type="button"
@@ -171,8 +171,8 @@ export default function CheckoutPage() {
                 >
                   <CreditCard className="w-5 h-5 text-amber-primary shrink-0 mt-0.5" />
                   <div>
-                    <div className="text-xs font-bold text-foreground">Direct Card / Electronic</div>
-                    <div className="text-[10px] text-text-muted mt-0.5">Instant digital authorization</div>
+                    <div className="text-xs font-bold text-foreground">Cash On Delivery</div>
+                    <div className="text-[10px] text-text-muted mt-0.5">Pay when you receive your order</div>
                   </div>
                 </button>
 

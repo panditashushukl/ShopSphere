@@ -36,10 +36,10 @@ export default function CustomerOrdersPage() {
       <div className="flex items-center justify-between border-b border-subtle pb-4">
         <div>
           <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
-            <ShoppingBag className="w-6 h-6 text-amber-primary" /> My Order History & Fulfillment Status
+            <ShoppingBag className="w-6 h-6 text-amber-primary" /> My Order Status
           </h1>
           <p className="text-xs text-text-muted mt-0.5">
-            Track and monitor the lifecycle status of your recent purchases.
+            Track Your Order.
           </p>
         </div>
       </div>

@@ -2,10 +2,10 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useAppStore, ChatMessage } from "@/lib/store/use-app-store";
+import { useAuth } from "@/store/auth-store";
 import { useCart } from "@/store/cart-store";
 import { siteConfig } from "@/config/site.config";
 import {
-  Bot,
   X,
   Send,
   Sparkles,
@@ -28,14 +28,14 @@ interface SessionItem {
 }
 
 const SUGGESTED_PROMPTS = [
-  "Search catalog for Wireless Mouse",
-  "Check my active procurement order status",
-  "Inspect current wholesale inventory ledger",
-  "Show minimum order quantity policies",
+  "Search Wireless Mouse",
+  "Check my order status",
+  "Show items under 30",
 ];
 
 export const ChatOverlay: React.FC = () => {
   const pathname = usePathname();
+  const user = useAuth((s) => s.user);
   const {
     isChatOpen,
     toggleChat,
@@ -44,7 +44,6 @@ export const ChatOverlay: React.FC = () => {
     messages,
     addMessage,
     setMessages,
-    user,
   } = useAppStore();
 
   const [input, setInput] = useState("");
@@ -261,10 +260,9 @@ export const ChatOverlay: React.FC = () => {
         aria-label="Open SS Agent Chat"
       >
         <div className="relative">
-          <Bot className="w-6 h-6 text-amber-primary" />
+          <Sparkles className="w-6 h-6 text-amber-primary" />
           <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-primary rounded-full ring-2 ring-surface" />
         </div>
-        <span className="font-semibold text-sm tracking-wide">SS Agent</span>
       </button>
     );
   }
@@ -275,7 +273,7 @@ export const ChatOverlay: React.FC = () => {
       <div className="flex items-center justify-between px-5 py-4 bg-canvas border-b border-subtle">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-amber-surface border border-subtle text-amber-primary">
-            <Bot className="w-5 h-5" />
+            <Sparkles className="w-5 h-5" />
           </div>
           <div>
             <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
@@ -284,9 +282,6 @@ export const ChatOverlay: React.FC = () => {
                 {user ? user.role : "GUEST"}
               </span>
             </h3>
-            <p className="text-xs text-text-muted font-mono truncate max-w-[140px]">
-              Thread: {activeThreadId}
-            </p>
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -386,10 +381,10 @@ export const ChatOverlay: React.FC = () => {
                 <Sparkles className="w-8 h-8" />
               </div>
               <h4 className="text-sm font-medium text-foreground mb-1">
-                {siteConfig.brandName} Autonomous Intelligence
+                {siteConfig.brandName} Agent
               </h4>
               <p className="text-xs text-text-muted max-w-[260px] mb-6">
-                Ask about inventory ledgers, procurement orders, catalog pricing, or place orders via prompt.
+                Ask about Platform or Place orders while interacting to Agent.
               </p>
               <div className="w-full space-y-2">
                 {SUGGESTED_PROMPTS.map((prompt, idx) => (
@@ -417,17 +412,9 @@ export const ChatOverlay: React.FC = () => {
                     }`}
                 >
                   {msg.sender === "user" ? (
-                    user?.avatarUrl ? (
-                      <img
-                        src={user.avatarUrl}
-                        alt="User Avatar"
-                        className="w-full h-full rounded-lg object-cover"
-                      />
-                    ) : (
-                      <UserIcon className="w-4 h-4" />
-                    )
+                    <UserIcon className="w-4 h-4" />
                   ) : (
-                    <Bot className="w-4 h-4" />
+                    <Sparkles className="w-4 h-4" />
                   )}
                 </div>
                 <div
@@ -447,7 +434,7 @@ export const ChatOverlay: React.FC = () => {
           {isLoading && (
             <div className="flex items-center gap-3 text-xs text-text-muted">
               <div className="w-7 h-7 rounded-lg bg-surface text-amber-primary flex items-center justify-center border border-subtle">
-                <Bot className="w-4 h-4 animate-spin" />
+                <Sparkles className="w-4 h-4 animate-spin" />
               </div>
               <div className="px-3 py-2 rounded-xl bg-surface border border-subtle flex items-center gap-2">
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-primary" />
@@ -484,5 +471,6 @@ export const ChatOverlay: React.FC = () => {
         </button>
       </form>
     </div>
+    
   );
 };

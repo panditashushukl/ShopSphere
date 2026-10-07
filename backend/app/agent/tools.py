@@ -167,10 +167,15 @@ async def search_catalog(
                 user = await user_repository.get_by_id(db, int(user_id))
 
             products = await product_service.list_products(db, query=query, user=user)
+            formatted_data = []
+            for p in products:
+                d = p.model_dump()
+                d["price_inr"] = f"₹{p.retail_price:,.2f}"
+                formatted_data.append(d)
             return ToolResultOutput(
                 success=True,
                 message=f"Found {len(products)} products matching '{query}'.",
-                data=[p.model_dump() for p in products]
+                data=formatted_data
             ).model_dump()
     except Exception as e:
         return ToolResultOutput(success=False, message=f"Could not search products right now: {str(e)}").model_dump()
@@ -233,6 +238,12 @@ async def remove_from_cart(
     """
     configurable = config.get("configurable", {}) if config else {}
     user_id = str(configurable.get("user_id", "guest"))
+
+    if not user_id or not user_id.isdigit():
+        return ToolResultOutput(
+            success=False,
+            message="Sign in required to modify cart. Please [Sign In to Continue](/login?next=/checkout)."
+        ).model_dump()
 
     try:
         async with SessionLocal() as db:

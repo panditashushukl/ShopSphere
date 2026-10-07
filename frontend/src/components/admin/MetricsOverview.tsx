@@ -34,7 +34,7 @@ export function MetricsOverview() {
             <TrendingUp className="w-5 h-5 text-amber-primary" /> Platform Revenue & Order Split Metrics
           </h2>
           <p className="text-xs text-text-muted mt-0.5">
-            Real-time financial performance breakdown across B2C Consumers, B2B Retailers, and Bulk Wholesalers.
+            Real-time financial performance breakdown across B2C Customers, B2B Retailers, and Bulk Wholesalers.
           </p>
         </div>
       </div>
@@ -60,7 +60,7 @@ export function MetricsOverview() {
           </div>
         </div>
 
-        {/* B2C Direct Consumer */}
+        {/* B2C Direct Customer */}
         <div className="bg-surface border border-subtle rounded-2xl p-5 flex flex-col justify-between shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-amber-primary">

@@ -4,9 +4,9 @@ import { CreditCard, Landmark, ArrowRightLeft, Smartphone } from "lucide-react";
 
 export function PaymentBadges() {
   const methods = [
-    { name: "Card", code: "CD" },
-    { name: "UPI", code: "UPI" },
-    { name: "NetBanking", code: "NB" },
+    // { name: "Card", code: "CD" },
+    // { name: "UPI", code: "UPI" },
+    // { name: "NetBanking", code: "NB" },
     { name: "Cash On Delivery", code: "COD" },
   ];
 

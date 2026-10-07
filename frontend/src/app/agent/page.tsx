@@ -338,7 +338,7 @@ function AgentContent() {
               </span>
             </div>
             <p className="text-xs text-text-muted mt-0.5">
-              Staged Cart Items: <span className="text-amber-primary font-bold">{cartLines.reduce((a, c) => a + c.qty, 0)} units</span>
+              Cart Items: <span className="text-amber-primary font-bold">{cartLines.reduce((a, c) => a + c.qty, 0)} units</span>
             </p>
           </div>
         </div>
@@ -512,7 +512,7 @@ function AgentContent() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Instruct SS Agent to search catalog, update stock, or execute checkout..."
+              placeholder="Ask/Shop with SS Agent..."
               className="flex-1 bg-transparent border-none text-xs sm:text-sm text-foreground placeholder-text-muted focus:outline-none resize-none px-2 py-1"
             />
             <button

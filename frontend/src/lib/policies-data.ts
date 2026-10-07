@@ -15,7 +15,7 @@ export const POLICIES_DATA: Record<string, PolicyItem> = {
     sections: [
       {
         heading: "1. 30-Day Retail Return Window",
-        body: "Retail consumer orders qualify for a full refund or exchange within 30 days of delivery. Items must be returned in original, unused condition with all original tags, packaging, and protective seals intact."
+        body: "Retail Customer orders qualify for a full refund or exchange within 30 days of delivery. Items must be returned in original, unused condition with all original tags, packaging, and protective seals intact."
       },
       {
         heading: "2. Bulk Wholesale Restocking Criteria",

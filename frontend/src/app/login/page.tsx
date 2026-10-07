@@ -11,10 +11,10 @@ import { Shield, Lock, Mail, ArrowRight, Loader2, KeyRound, ShoppingBag } from "
 import Link from "next/link";
 
 const TEST_ACCOUNTS = [
-  { label: "Super Admin", email: "admin@shopsphere.com", role: "SUPER_ADMIN" as const, desc: "Platform Operations & Analytics" },
-  { label: "Wholesaler", email: "wholesaler@shopsphere.com", role: "WHOLESALER" as const, desc: "Bulk Catalog & Wholesale Accounts" },
-  { label: "Retailer", email: "retailer@shopsphere.com", role: "RETAILER" as const, desc: "Trade Reselling & Expedited Orders" },
-  { label: "Customer", email: "customer@shopsphere.com", role: "CUSTOMER" as const, desc: "Direct B2C Catalog & Checkout" },
+  // { label: "Super Admin", email: "admin@shopsphere.com", role: "SUPER_ADMIN" as const },
+  // { label: "Wholesaler", email: "wholesaler@shopsphere.com", role: "WHOLESALER" as },
+  // { label: "Retailer", email: "retailer@shopsphere.com", role: "RETAILER" as const},
+  { label: "Customer", email: "customer@shopsphere.com", role: "CUSTOMER" as const },
 ];
 
 function LoginContent() {
@@ -148,7 +148,7 @@ function LoginContent() {
       <div className="bg-surface border border-subtle rounded-3xl p-6 space-y-4 shadow-sm">
         <div className="flex items-center justify-between border-b border-subtle pb-3">
           <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider flex items-center gap-2">
-            <Shield className="w-4 h-4 text-amber-primary" /> Commercial Account Presets
+            <Shield className="w-4 h-4 text-amber-primary" /> Login to Test Accounts
           </h3>
           <span className="text-[10px] text-text-muted font-mono">Default: Passw0rd!</span>
         </div>
@@ -170,7 +170,6 @@ function LoginContent() {
                   <div className="text-xs font-bold text-foreground group-hover:text-amber-primary transition-colors">
                     {acc.email}
                   </div>
-                  <div className="text-[10px] text-text-muted truncate">{acc.desc}</div>
                 </div>
               </div>
               <ArrowRight className="w-4 h-4 text-text-muted group-hover:text-amber-primary transition-colors" />
