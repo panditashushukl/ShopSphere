@@ -24,22 +24,22 @@ SEED_USERS: List[Tuple[str, str, Role, str]] = [
 
 SEED_PRODUCTS: List[Tuple[str, str, int, float, float, float, int, str, List[str]]] = [
     (
-        "SKU-001", "Wireless Mouse", 1200, 29.99, 21.50, 15.00, 50,
+        "SKU-001", "Wireless Mouse", 1200, 29.99, 21.50, 15.00, 1,
         "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46",
         ["https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7"]
     ),
     (
-        "SKU-002", "USB-C Cable 2m", 3000, 12.99, 8.50, 5.25, 100,
+        "SKU-002", "USB-C Cable 2m", 3000, 12.99, 8.50, 5.25, 2,
         "https://images.unsplash.com/photo-1544816155-12df9643f363",
         ["https://images.unsplash.com/photo-1583863788434-e58a36330cf0"]
     ),
     (
-        "SKU-003", "Mechanical Keyboard", 400, 89.00, 64.00, 48.00, 50,
+        "SKU-003", "Mechanical Keyboard", 400, 89.00, 64.00, 48.00, 1,
         "https://images.unsplash.com/photo-1587829741301-dc798b83add3",
         ["https://images.unsplash.com/photo-1618384887929-16ec33fab9ef"]
     ),
     (
-        "SKU-004", "27in Monitor", 150, 249.00, 199.00, 170.00, 50,
+        "SKU-004", "27in Monitor", 150, 249.00, 199.00, 170.00, 1,
         "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf",
         ["https://images.unsplash.com/photo-1547082299-de196ea013d6"]
     )
