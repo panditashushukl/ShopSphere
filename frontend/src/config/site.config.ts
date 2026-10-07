@@ -30,7 +30,7 @@ export const siteConfig = {
     github: "https://github.com/panditashushukl/ShopSphere",
   },
   api: {
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1",
+    baseUrl: process.env.NEXT_PUBLIC_API_URL || "/api/v1",
     endpoints: {
       auth: {
         login: "/auth/login",
