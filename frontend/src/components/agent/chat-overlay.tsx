@@ -186,6 +186,22 @@ export const ChatOverlay: React.FC = () => {
     setInput("");
     setIsLoading(true);
 
+    if (!user) {
+      const lower = promptText.toLowerCase();
+      if (/cart|checkout|purchase|buy|order|cat|out/.test(lower)) {
+        const agentMessage: ChatMessage = {
+          id: `msg_${Date.now() + 1}`,
+          sender: "agent",
+          text: "Signing in is required to manage your shopping cart, checkout, or place orders.\n\nPlease [Sign In to Continue](/login?next=/checkout).",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          metadata: { status: "Sign In Required", role: "GUEST" },
+        };
+        addMessage(agentMessage);
+        setIsLoading(false);
+        return;
+      }
+    }
+
     try {
       const response = await fetch(`${siteConfig.api.baseUrl}${siteConfig.api.endpoints.agent.query}`, {
         method: "POST",

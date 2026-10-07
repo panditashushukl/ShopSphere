@@ -4,29 +4,20 @@ Provides session dependencies, current user extraction, and RBAC role guards.
 """
 
 from typing import List, Optional
-from fastapi import Cookie, Depends, Request
+from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.database import get_db
-from app.core.security import decode_token
-from app.models.user import User, Role
-from app.repositories.user_repository import user_repository
 from app.core.exceptions import AuthenticationError, ForbiddenRoleError
-
-
-async def _extract_token(request: Request, access_token: Optional[str]) -> Optional[str]:
-    if access_token:
-        return access_token
-    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        return auth_header.split(" ")[1]
-    return None
+from app.models.user import Role, User
+from app.repositories.user_repository import user_repository
 
 
 async def get_current_user(
     request: Request,
     db: AsyncSession = Depends(get_db)
 ) -> User:
-    """Extracts and verifies current user from entrypoint middleware state or cookie/header."""
+    """Extracts and verifies current user from entrypoint middleware state."""
     user_id = getattr(request.state, "user_id", None)
     if not user_id:
         raise AuthenticationError("Not authenticated. Session token missing or expired.")
@@ -38,6 +29,7 @@ async def get_current_user(
     return user
 
 
+# Readable alias for routes requiring strict auth
 require_authenticated_user = get_current_user
 
 
@@ -47,7 +39,7 @@ def require_role(roles: List[str]):
 
     async def role_checker(user: User = Depends(get_current_user)) -> User:
         if user.role not in allowed_roles:
-            raise ForbiddenRoleError(f"Forbidden: Action requires role in {roles}.")
+            raise ForbiddenRoleError(f"Forbidden: Action requires one of roles: {roles}.")
 
         if user.role in (Role.RETAILER, Role.WHOLESALER) and not user.is_verified:
             raise ForbiddenRoleError("Account pending admin approval.")
@@ -79,10 +71,6 @@ async def get_user_id_str(
 
     guest_id = (
         request.cookies.get("shopsphere_guest_id") or
-        request.headers.get("x-guest-id") or
-        request.query_params.get("guest_id")
+        request.headers.get("x-guest-id")
     )
-    if guest_id:
-        return guest_id
-    return "guest"
-
+    return guest_id if guest_id else "guest"

@@ -125,18 +125,20 @@ export function Navbar() {
               {/* Theme Switcher Toggle */}
               <ThemeToggle />
 
-              <button
-                onClick={() => setCartOpen(true)}
-                className="relative p-2 text-text-muted hover:text-foreground hover:bg-canvas rounded-lg transition-colors border border-subtle"
-                aria-label="Open shopping cart"
-              >
-                <ShoppingBag className="w-5 h-5" />
-                {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-amber-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {totalItems}
-                  </span>
-                )}
-              </button>
+              {user && (
+                <button
+                  onClick={() => setCartOpen(true)}
+                  className="relative p-2 text-text-muted hover:text-foreground hover:bg-canvas rounded-lg transition-colors border border-subtle"
+                  aria-label="Open shopping cart"
+                >
+                  <ShoppingBag className="w-5 h-5" />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-amber-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {totalItems}
+                    </span>
+                  )}
+                </button>
+              )}
 
               {user ? (
                 <div className="flex items-center gap-2 pl-2 border-l border-subtle">

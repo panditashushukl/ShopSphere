@@ -58,31 +58,6 @@ class CartRepository(BaseRepository[CartItem]):
         await db.execute(stmt)
         await db.commit()
 
-    async def merge_guest_cart(self, db: AsyncSession, guest_id: str, target_user_id: str) -> None:
-        guest_ids_to_check = {guest_id, "guest", "GUEST_USER"} - {str(target_user_id), None, ""}
-        
-        for g_id in guest_ids_to_check:
-            guest_items = await self.get_user_cart(db, user_id=g_id)
-            if not guest_items:
-                continue
-
-            for g_item in guest_items:
-                existing = await self.get_cart_item(db, user_id=target_user_id, product_id=g_item.product_id)
-                if existing:
-                    existing.quantity += g_item.quantity
-                    db.add(existing)
-                else:
-                    new_item = CartItem(
-                        user_id=str(target_user_id),
-                        product_id=g_item.product_id,
-                        quantity=g_item.quantity
-                    )
-                    db.add(new_item)
-
-            await self.clear_user_cart(db, user_id=g_id)
-        
-        await db.commit()
-
 
 cart_repository = CartRepository()
 

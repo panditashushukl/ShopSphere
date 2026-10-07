@@ -34,6 +34,10 @@ export default function ProductDetailClient({ id }: { id: string }) {
 
   const handleAddToCart = () => {
     if (!product) return;
+    if (!user) {
+      router.push("/login?next=/checkout");
+      return;
+    }
     addCart(
       {
         productId: product.id,
@@ -51,6 +55,10 @@ export default function ProductDetailClient({ id }: { id: string }) {
 
   const handleBuyNow = () => {
     if (!product) return;
+    if (!user) {
+      router.push("/login?next=/checkout");
+      return;
+    }
     addCart(
       {
         productId: product.id,
@@ -62,11 +70,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
       qty
     );
 
-    if (user) {
-      router.push("/checkout");
-    } else {
-      router.push("/login?next=/checkout");
-    }
+    router.push("/checkout");
   };
 
   if (isLoading) {
@@ -205,42 +209,57 @@ export default function ProductDetailClient({ id }: { id: string }) {
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                onClick={handleAddToCart}
-                disabled={product.stock <= 0 || isMoqViolation}
-                className={`py-3.5 px-4 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                  added
-                    ? "bg-emerald-600 text-white"
-                    : product.stock <= 0 || isMoqViolation
-                    ? "bg-canvas text-text-muted cursor-not-allowed border border-subtle"
-                    : "bg-canvas hover:bg-surface text-foreground border border-subtle"
-                }`}
-              >
-                {added ? (
-                  <>
-                    <Check className="w-4 h-4 text-white" /> Added {qty} units
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="w-4 h-4 text-amber-primary" /> Add to Cart
-                  </>
-                )}
-              </button>
+            {user ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={product.stock <= 0 || isMoqViolation}
+                  className={`py-3.5 px-4 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                    added
+                      ? "bg-emerald-600 text-white"
+                      : product.stock <= 0 || isMoqViolation
+                      ? "bg-canvas text-text-muted cursor-not-allowed border border-subtle"
+                      : "bg-canvas hover:bg-surface text-foreground border border-subtle"
+                  }`}
+                >
+                  {added ? (
+                    <>
+                      <Check className="w-4 h-4 text-white" /> Added {qty} units
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-4 h-4 text-amber-primary" /> Add to Cart
+                    </>
+                  )}
+                </button>
 
+                <button
+                  onClick={handleBuyNow}
+                  disabled={product.stock <= 0 || isMoqViolation}
+                  className={`py-3.5 px-4 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                    product.stock <= 0 || isMoqViolation
+                      ? "bg-canvas text-text-muted cursor-not-allowed border border-subtle"
+                      : "bg-amber-primary hover:bg-amber-hover text-white shadow-sm"
+                  }`}
+                >
+                  <Zap className="w-4 h-4 fill-current text-white" />
+                  <span>Buy Now & Checkout</span>
+                </button>
+              </div>
+            ) : (
               <button
                 onClick={handleBuyNow}
                 disabled={product.stock <= 0 || isMoqViolation}
-                className={`py-3.5 px-4 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                className={`w-full py-3.5 px-4 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
                   product.stock <= 0 || isMoqViolation
                     ? "bg-canvas text-text-muted cursor-not-allowed border border-subtle"
                     : "bg-amber-primary hover:bg-amber-hover text-white shadow-sm"
                 }`}
               >
                 <Zap className="w-4 h-4 fill-current text-white" />
-                <span>{user ? "Buy Now & Checkout" : "Buy Now (Sign In)"}</span>
+                <span>Buy Now</span>
               </button>
-            </div>
+            )}
           </div>
         </div>
       </div>

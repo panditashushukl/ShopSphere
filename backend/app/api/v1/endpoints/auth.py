@@ -18,13 +18,10 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
     data: UserCreate,
-    request: Request,
     db: AsyncSession = Depends(get_db)
 ):
     """Register a new customer or merchant account."""
     user = await auth_service.register_user(db, data)
-    guest_id = request.cookies.get("shopsphere_guest_id") or request.headers.get("x-guest-id") or "guest"
-    await cart_service.merge_guest_cart(db, guest_id=guest_id, user_id=str(user.id))
     res = success_response(
         data=user.model_dump(),
         message="User registered successfully",
@@ -37,13 +34,10 @@ async def register(
 @router.post("/login")
 async def login(
     data: UserLogin,
-    request: Request,
     db: AsyncSession = Depends(get_db)
 ):
     """Authenticate user credentials and set session cookies."""
     user = await auth_service.login_user(db, data)
-    guest_id = request.cookies.get("shopsphere_guest_id") or request.headers.get("x-guest-id") or "guest"
-    await cart_service.merge_guest_cart(db, guest_id=guest_id, user_id=str(user.id))
     res = success_response(
         data=user.model_dump(),
         message="Login successful"

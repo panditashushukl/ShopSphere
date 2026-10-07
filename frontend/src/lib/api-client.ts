@@ -1,5 +1,3 @@
-import { getGuestId } from "./guest-id";
-
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 let refreshing: Promise<boolean> | null = null;
 
@@ -14,7 +12,6 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      "x-guest-id": getGuestId(),
       ...init.headers,
     },
   });

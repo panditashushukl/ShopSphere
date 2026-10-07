@@ -61,8 +61,5 @@ class CartService:
     async def clear_cart(self, db: AsyncSession, user_id: str) -> None:
         await cart_repository.clear_user_cart(db, user_id=user_id)
 
-    async def merge_guest_cart(self, db: AsyncSession, guest_id: str, user_id: str) -> None:
-        await cart_repository.merge_guest_cart(db, guest_id=guest_id, target_user_id=user_id)
-
 
 cart_service = CartService()

@@ -38,7 +38,7 @@ function LoginContent() {
         body: JSON.stringify({ email: loginEmail, password: loginPass }),
       });
       setUser(res);
-      await useCart.getState().fetchCart();
+      await useCart.getState().syncLocalCartToBackend();
 
       if (nextParam) {
         router.push(nextParam);

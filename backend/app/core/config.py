@@ -18,9 +18,9 @@ class Settings(BaseSettings):
     DB_PASSWORD: str = ""
     DATABASE_URL: Optional[str] = None
 
-    ACCESS_MINUTES: int = 15
+    ACCESS_MINUTES: int = 60*24
     REFRESH_DAYS: int = 7
-    COOKIE_SECURE: bool = False
+    COOKIE_SECURE: bool = True
     FRONTEND_ORIGIN: str = "http://localhost:3000"
 
     # Gemini AI Agent Configuration

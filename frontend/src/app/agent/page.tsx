@@ -202,6 +202,22 @@ function AgentContent() {
     setLoading(true);
     scrollToBottom(true);
 
+    if (!user) {
+      const lower = textQuery.toLowerCase();
+      if (/cart|checkout|purchase|buy|order|cat|out/.test(lower)) {
+        const agentMsg: Message = {
+          id: `agent-${Date.now() + 1}`,
+          sender: "agent",
+          text: "Signing in is required to manage your shopping cart, checkout, or place orders.\n\nPlease [Sign In to Continue](/login?next=/checkout).",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          metadata: { status: "Sign In Required", role: "GUEST" },
+        };
+        setMessages((prev) => [...prev, agentMsg]);
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       const res = await api<{ reply: string; status: string; thread_id?: string; metadata?: Record<string, any> }>(
         siteConfig.api.endpoints.agent.query,

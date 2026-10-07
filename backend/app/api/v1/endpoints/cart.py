@@ -8,7 +8,8 @@ from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, get_user_id_str
+from app.api.deps import get_db, get_current_user
+from app.models.user import User
 from app.services.cart_service import cart_service
 from app.core.response import success_response
 
@@ -24,10 +25,10 @@ router = APIRouter(prefix="/cart", tags=["cart"])
 @router.get("")
 async def get_db_cart(
     db: AsyncSession = Depends(get_db),
-    user_id: str = Depends(get_user_id_str)
+    current_user: User = Depends(get_current_user)
 ):
-    """Retrieve all persisted cart items from database for user or unique guest session."""
-    cart_items = await cart_service.get_cart(db, user_id=user_id)
+    """Retrieve all persisted cart items from database for current authenticated user."""
+    cart_items = await cart_service.get_cart(db, user_id=str(current_user.id))
     items_data = [
         {
             "id": ci.id,
@@ -48,12 +49,12 @@ async def get_db_cart(
 async def add_item_to_db_cart(
     payload: AddCartItemPayload,
     db: AsyncSession = Depends(get_db),
-    user_id: str = Depends(get_user_id_str)
+    current_user: User = Depends(get_current_user)
 ):
-    """Add or increment product quantity in the database cart."""
+    """Add or increment product quantity in the database cart for authenticated user."""
     created = await cart_service.add_to_cart(
         db,
-        user_id=user_id,
+        user_id=str(current_user.id),
         product_id=payload.product_id,
         quantity=payload.quantity
     )
@@ -72,11 +73,11 @@ async def add_item_to_db_cart(
 async def remove_item_from_db_cart(
     product_id: int,
     db: AsyncSession = Depends(get_db),
-    user_id: str = Depends(get_user_id_str)
+    current_user: User = Depends(get_current_user)
 ):
     """Remove a single product from the database cart."""
     removed = await cart_service.remove_from_cart(
-        db, user_id=user_id, product_id=product_id
+        db, user_id=str(current_user.id), product_id=product_id
     )
     return success_response(data={"removed": removed}, message="Item removed from cart")
 
@@ -84,9 +85,9 @@ async def remove_item_from_db_cart(
 @router.delete("")
 async def clear_db_cart(
     db: AsyncSession = Depends(get_db),
-    user_id: str = Depends(get_user_id_str)
+    current_user: User = Depends(get_current_user)
 ):
     """Clear all persisted items in the database cart."""
-    await cart_service.clear_cart(db, user_id=user_id)
+    await cart_service.clear_cart(db, user_id=str(current_user.id))
     return success_response(data=None, message="Cart cleared successfully")
 

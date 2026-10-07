@@ -192,6 +192,12 @@ async def add_to_cart(
     configurable = config.get("configurable", {}) if config else {}
     user_id = str(configurable.get("user_id", "guest"))
 
+    if not user_id or not user_id.isdigit():
+        return ToolResultOutput(
+            success=False,
+            message="Sign in required to manage cart or buy products. Please [Sign In to Continue](/login?next=/checkout)."
+        ).model_dump()
+
     try:
         async with SessionLocal() as db:
             cart_item = await cart_service.add_to_cart(
@@ -313,6 +319,12 @@ async def get_user_cart(
     """
     configurable = config.get("configurable", {}) if config else {}
     user_id = str(configurable.get("user_id", "guest"))
+
+    if not user_id or not user_id.isdigit():
+        return ToolResultOutput(
+            success=False,
+            message="Sign in required to view your cart. Please [Sign In to Continue](/login?next=/checkout)."
+        ).model_dump()
 
     try:
         async with SessionLocal() as db:

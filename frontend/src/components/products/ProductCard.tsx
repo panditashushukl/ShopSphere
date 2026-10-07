@@ -23,6 +23,11 @@ export function ProductCard({ product }: { product: ProductItem }) {
     e.preventDefault();
     e.stopPropagation();
 
+    if (!user) {
+      router.push("/login?next=/checkout");
+      return;
+    }
+
     addCart(
       {
         productId: product.id,
@@ -42,6 +47,11 @@ export function ProductCard({ product }: { product: ProductItem }) {
     e.preventDefault();
     e.stopPropagation();
 
+    if (!user) {
+      router.push("/login?next=/checkout");
+      return;
+    }
+
     addCart(
       {
         productId: product.id,
@@ -53,11 +63,7 @@ export function ProductCard({ product }: { product: ProductItem }) {
       Math.max(1, moq)
     );
 
-    if (user) {
-      router.push("/checkout");
-    } else {
-      router.push("/login?next=/checkout");
-    }
+    router.push("/checkout");
   };
 
   return (
@@ -125,43 +131,58 @@ export function ProductCard({ product }: { product: ProductItem }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={handleAddToCart}
-            disabled={product.stock <= 0}
-            className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-200 ${
-              added
-                ? "bg-emerald-600 text-white"
-                : product.stock <= 0
-                ? "bg-canvas text-text-muted cursor-not-allowed border border-subtle"
-                : "bg-canvas hover:bg-surface text-foreground border border-subtle"
-            }`}
-            title="Add to Cart Drawer"
-          >
-            {added ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-white" /> Added
-              </>
-            ) : (
-              <>
-                <ShoppingCart className="w-3.5 h-3.5 text-amber-primary" /> + Cart
-              </>
-            )}
-          </button>
+        {user ? (
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={handleAddToCart}
+              disabled={product.stock <= 0}
+              className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-200 ${
+                added
+                  ? "bg-emerald-600 text-white"
+                  : product.stock <= 0
+                  ? "bg-canvas text-text-muted cursor-not-allowed border border-subtle"
+                  : "bg-canvas hover:bg-surface text-foreground border border-subtle"
+              }`}
+              title="Add to Cart"
+            >
+              {added ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-white" /> Added
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="w-3.5 h-3.5 text-amber-primary" /> + Cart
+                </>
+              )}
+            </button>
 
+            <button
+              onClick={handleBuyNow}
+              disabled={product.stock <= 0}
+              className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-200 ${
+                product.stock <= 0
+                  ? "bg-canvas text-text-muted cursor-not-allowed border border-subtle"
+                  : "bg-amber-primary hover:bg-amber-hover text-white shadow-sm active:scale-95"
+              }`}
+              title="Buy Now & Checkout"
+            >
+              <Zap className="w-3.5 h-3.5 fill-current" /> Buy Now
+            </button>
+          </div>
+        ) : (
           <button
             onClick={handleBuyNow}
             disabled={product.stock <= 0}
-            className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-200 ${
+            className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all duration-200 ${
               product.stock <= 0
                 ? "bg-canvas text-text-muted cursor-not-allowed border border-subtle"
                 : "bg-amber-primary hover:bg-amber-hover text-white shadow-sm active:scale-95"
             }`}
-            title={user ? "Buy Now & Checkout" : "Buy Now (Sign In Required)"}
+            title="Sign In to Purchase"
           >
-            <Zap className="w-3.5 h-3.5 fill-current" /> Buy Now
+            <Zap className="w-4 h-4 fill-current" /> Buy Now
           </button>
-        </div>
+        )}
       </div>
     </div>
   );

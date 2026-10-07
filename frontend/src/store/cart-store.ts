@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { siteConfig } from "@/config/site.config";
 import { api } from "@/lib/api-client";
+import { useAuth } from "./auth-store";
 
 export interface CartLine { productId: number; sku: string; title: string; price: number; qty: number; moq: number }
 interface CartState {
@@ -14,6 +15,7 @@ interface CartState {
   moqViolations: () => CartLine[];
   syncWithProducts: (products: { id: number; price?: number; retail_price?: number; min_order_quantity?: number }[]) => void;
   fetchCart: () => Promise<void>;
+  syncLocalCartToBackend: () => Promise<void>;
 }
 
 export const useCart = create<CartState>()(persist((set, get) => ({
@@ -23,30 +25,36 @@ export const useCart = create<CartState>()(persist((set, get) => ({
       const ex = s.lines.find((x) => x.productId === l.productId);
       return { lines: ex ? s.lines.map((x) => x.productId === l.productId ? { ...x, qty: x.qty + qty } : x) : [...s.lines, { ...l, qty }] };
     });
-    // Persist to backend DB cart
-    try {
-      api(siteConfig.api.endpoints.cart.add, {
-        method: "POST",
-        body: JSON.stringify({ product_id: l.productId, quantity: qty }),
-      }).catch(() => {});
-    } catch (e) {}
+    // Persist to backend DB cart only if user is authenticated
+    if (useAuth.getState().user) {
+      try {
+        api(siteConfig.api.endpoints.cart.add, {
+          method: "POST",
+          body: JSON.stringify({ product_id: l.productId, quantity: qty }),
+        }).catch(() => {});
+      } catch (e) {}
+    }
   },
   setQty: (id, qty) => set((s) => ({ lines: s.lines.map((x) => x.productId === id ? { ...x, qty: Math.max(1, qty) } : x) })),
   remove: (id) => {
     set((s) => ({ lines: s.lines.filter((x) => x.productId !== id) }));
-    try {
-      api(`${siteConfig.api.endpoints.cart.get}/${id}`, {
-        method: "DELETE",
-      }).catch(() => {});
-    } catch (e) {}
+    if (useAuth.getState().user) {
+      try {
+        api(`${siteConfig.api.endpoints.cart.get}/${id}`, {
+          method: "DELETE",
+        }).catch(() => {});
+      } catch (e) {}
+    }
   },
   clear: () => {
     set({ lines: [] });
-    try {
-      api(siteConfig.api.endpoints.cart.clear, {
-        method: "DELETE",
-      }).catch(() => {});
-    } catch (e) {}
+    if (useAuth.getState().user) {
+      try {
+        api(siteConfig.api.endpoints.cart.clear, {
+          method: "DELETE",
+        }).catch(() => {});
+      } catch (e) {}
+    }
   },
   total: () => get().lines.reduce((a, l) => a + l.price * l.qty, 0),
   moqViolations: () => get().lines.filter((l) => l.qty < l.moq),
@@ -59,7 +67,24 @@ export const useCart = create<CartState>()(persist((set, get) => ({
       return { ...line, price: updatedPrice, moq: updatedMoq };
     }),
   })),
+  syncLocalCartToBackend: async () => {
+    const user = useAuth.getState().user;
+    if (!user) return;
+    const currentLines = get().lines;
+    if (currentLines.length > 0) {
+      for (const line of currentLines) {
+        try {
+          await api(siteConfig.api.endpoints.cart.add, {
+            method: "POST",
+            body: JSON.stringify({ product_id: line.productId, quantity: line.qty }),
+          });
+        } catch (e) {}
+      }
+    }
+    await get().fetchCart();
+  },
   fetchCart: async () => {
+    if (!useAuth.getState().user) return;
     try {
       const data = await api<any[]>(siteConfig.api.endpoints.cart.get);
       if (Array.isArray(data)) {
